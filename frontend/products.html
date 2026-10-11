@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PC Point – Product Catalog | Shop Laptops, GPUs, CPUs & More</title>
+  <meta name="description" content="Browse PC Point's full catalog of laptops, desktops, GPUs, CPUs, RAM and SSDs. Filter by category, sort by price, and find exactly what you need.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div id="scroll-progress"></div>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-inner container">
+      <span><i class="fa-solid fa-truck-fast"></i> <strong>Free Delivery</strong> on orders above ₹5,000</span>
+      <span><i class="fa-solid fa-shield-halved"></i> <strong>1-Year Warranty</strong> on all products</span>
+    </div>
+  </div>
+
+  <!-- Main Navbar -->
+  <header class="navbar">
+    <a href="/" class="nav-brand">
+      <div class="nav-logo-box"><i class="fa-solid fa-microchip"></i></div>
+      <span class="nav-brand-name">PC<span>.</span>Point</span>
+    </a>
+    <div class="nav-search">
+      <i class="fa-solid fa-search search-icon"></i>
+      <input type="text" id="search-input" placeholder="Search products by name or ID..." autocomplete="off">
+    </div>
+    <div class="nav-actions">
+      <a href="/login.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-user-shield"></i> Admin</a>
+      <button class="hamburger-btn" id="hamburger-btn"><i class="fa-solid fa-bars"></i></button>
+    </div>
+  </header>
+
+  <!-- Category Bar -->
+  <nav class="cat-nav">
+    <ul class="cat-nav-list container">
+      <li><a href="/" class="cat-nav-link"><i class="fa-solid fa-house"></i> Home</a></li>
+      <li><a href="/products.html" class="cat-nav-link active"><i class="fa-solid fa-store"></i> All Products</a></li>
+      <li><a href="/products.html?cat=Laptop" class="cat-nav-link"><i class="fa-solid fa-laptop"></i> Laptops</a></li>
+      <li><a href="/products.html?cat=Desktop" class="cat-nav-link"><i class="fa-solid fa-desktop"></i> Desktops</a></li>
+      <li><a href="/products.html?cat=GPU" class="cat-nav-link"><i class="fa-solid fa-display"></i> GPUs</a></li>
+      <li><a href="/products.html?cat=CPU" class="cat-nav-link"><i class="fa-solid fa-microchip"></i> CPUs</a></li>
+      <li><a href="/products.html?cat=RAM" class="cat-nav-link"><i class="fa-solid fa-memory"></i> RAM</a></li>
+      <li><a href="/products.html?cat=SSD" class="cat-nav-link"><i class="fa-solid fa-hard-drive"></i> Storage</a></li>
+    </ul>
+  </nav>
+
+  <!-- Mobile Drawer -->
+  <div class="mobile-drawer" id="mobile-drawer">
+    <div class="drawer-header">
+      <a href="/" class="nav-brand">
+        <div class="nav-logo-box"><i class="fa-solid fa-microchip"></i></div>
+        <span class="nav-brand-name" style="color:#fff;">PC<span>.</span>Point</span>
+      </a>
+      <button class="drawer-close" id="drawer-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <ul class="drawer-links">
+      <li><a href="/" class="drawer-link"><i class="fa-solid fa-house"></i> Home</a></li>
+      <li><a href="/products.html" class="drawer-link active"><i class="fa-solid fa-store"></i> All Products</a></li>
+      <li><a href="/products.html?cat=Laptop" class="drawer-link"><i class="fa-solid fa-laptop"></i> Laptops</a></li>
+      <li><a href="/products.html?cat=GPU" class="drawer-link"><i class="fa-solid fa-display"></i> GPUs</a></li>
+      <li><a href="/products.html?cat=CPU" class="drawer-link"><i class="fa-solid fa-microchip"></i> CPUs</a></li>
+      <li><a href="/login.html" class="drawer-link"><i class="fa-solid fa-user-shield"></i> Admin Login</a></li>
+    </ul>
+  </div>
+  <div class="backdrop" id="backdrop"></div>
+
+  <!-- Page Hero -->
+  <div class="page-hero">
+    <div class="container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div class="page-hero-breadcrumb">
+          <a href="/">Home</a>
+          <i class="fa-solid fa-chevron-right" style="font-size:0.65rem;"></i>
+          <span id="breadcrumb-cat">All Products</span>
+        </div>
+        <h1 class="page-hero-title" id="page-title">Product Catalog</h1>
+        <p style="color:#94a3b8;font-size:0.9rem;" id="page-subtitle">Browse our complete inventory of genuine hardware and accessories</p>
+      </div>
+      <button class="btn btn-primary" id="btn-add-product">
+        <i class="fa-solid fa-plus"></i> Add New Product
+      </button>
+    </div>
+  </div>
+
+  <main style="padding:2rem 0 4rem;">
+    <div class="container">
+      <div class="shop-layout">
+
+        <!-- Filter Sidebar -->
+        <aside class="filter-sidebar reveal-left">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+            <h3 style="font-weight:800;font-size:1rem;color:var(--navy);">Filters</h3>
+            <button onclick="clearFilters()" class="btn btn-ghost btn-sm" style="font-size:0.78rem;">Clear All</button>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-section-title">Category</div>
+            <label class="filter-option"><input type="checkbox" class="cat-filter" value="Laptop"> Laptops</label>
+            <label class="filter-option"><input type="checkbox" class="cat-filter" value="Desktop"> Desktop PCs</label>
+            <label class="filter-option"><input type="checkbox" class="cat-filter" value="GPU"> Graphics Cards</label>
+            <label class="filter-option"><input type="checkbox" class="cat-filter" value="CPU"> Processors</label>
+            <label class="filter-option"><input type="checkbox" class="cat-filter" value="RAM"> RAM Memory</label>
+            <label class="filter-option"><input type="checkbox" class="cat-filter" value="SSD"> NVMe Storage</label>
+            <label class="filter-option"><input type="checkbox" class="cat-filter" value="Accessories"> Accessories</label>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-section-title">Sort By</div>
+            <select id="sort-key" class="form-control" style="margin-bottom:0.5rem;">
+              <option value="">Default</option>
+              <option value="price_asc">Price: Low to High ↑</option>
+              <option value="price_desc">Price: High to Low ↓</option>
+              <option value="name_asc">Name: A to Z</option>
+              <option value="stock_desc">Stock: Most First</option>
+            </select>
+            <button id="btn-sort" class="btn btn-primary btn-sm btn-block">
+              <i class="fa-solid fa-arrow-down-a-z"></i> Apply Sort
+            </button>
+          </div>
+
+          <div class="filter-section">
+            <div class="filter-section-title">Quick Search by ID</div>
+            <div style="display:flex;gap:0.5rem;">
+              <input type="number" id="search-id" class="form-control" placeholder="Product ID..." min="1">
+              <button id="btn-search-id" class="btn btn-navy btn-sm"><i class="fa-solid fa-search"></i></button>
+            </div>
+            <div id="search-status" style="margin-top:0.5rem;font-size:0.8rem;font-weight:600;"></div>
+          </div>
+        </aside>
+
+        <!-- Product Grid -->
+        <div>
+          <!-- Sort & result bar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.75rem;" class="reveal">
+            <div id="result-count" style="font-size:0.88rem;color:var(--text-2);">Loading products...</div>
+            <div id="search-trace-indicator" style="display:none;" class="tag tag-green">
+              <i class="fa-solid fa-check"></i> <span id="trace-text"></span>
+            </div>
+          </div>
+
+          <!-- Products grid -->
+          <div class="grid-auto" id="products-grid">
+            <div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--text-3);">
+              <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;margin-bottom:1rem;display:block;"></i>
+              Loading inventory...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Product Modal -->
+  <div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:2500;align-items:center;justify-content:center;padding:1rem;">
+    <div class="card" style="width:100%;max-width:520px;position:relative;z-index:2501;box-shadow:var(--shadow-xl);animation:slideUp 0.3s ease;">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-plus-circle" style="color:var(--red);"></i> Add New Product</h3>
+        <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:1.3rem;color:var(--text-3);"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="add-product-form">
+        <div class="form-group">
+          <label class="form-label">Product Name</label>
+          <input type="text" id="prod-name" class="form-control" placeholder="e.g. Intel Core i9-14900K Processor" required>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select id="prod-category" class="form-control">
+              <option value="Laptop">Laptop</option>
+              <option value="Desktop">Desktop PC</option>
+              <option value="GPU">Graphics Card</option>
+              <option value="CPU">Processor (CPU)</option>
+              <option value="RAM">DDR5 RAM</option>
+              <option value="SSD">NVMe SSD</option>
+              <option value="Accessories">Accessories</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Brand</label>
+            <input type="text" id="prod-brand" class="form-control" placeholder="e.g. Intel, NVIDIA, ASUS" required>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Price (₹)</label>
+            <input type="number" id="prod-price" class="form-control" placeholder="e.g. 54990" required min="1" step="0.01">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stock Quantity</label>
+            <input type="number" id="prod-stock" class="form-control" placeholder="e.g. 15" required min="0">
+          </div>
+        </div>
+        <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:0.5rem;">
+          <button type="button" onclick="closeModal()" class="btn btn-ghost">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Product</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="justify-content:center;text-align:center;">
+        <p>© 2026 PC Point Online Store. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <style>
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+  <script src="app.js"></script>
+  <script src="products.js"></script>
+</body>
+</html>

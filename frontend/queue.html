@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PC Point – Customer Support & Service Desk</title>
+  <meta name="description"
+    content="PC Point Customer Support and Service Desk queue for custom PC assembly, hardware repair, and warranty claims.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="container topbar-content">
+      <span><i class="fa-solid fa-headset" style="color: var(--accent-red);"></i> Toll Free Customer Support: 1800-420-PCPOINT</span>
+      <span><i class="fa-solid fa-clock" style="color: var(--accent-red);"></i> Mon - Sat: 9 AM - 8 PM</span>
+      <span><i class="fa-solid fa-location-dot"></i> Tech Park Service Center, Bangalore</span>
+    </div>
+  </div>
+
+  <!-- Main Navbar -->
+  <header class="navbar container">
+    <a href="/" class="nav-brand">
+      <div class="nav-logo-box"><i class="fa-solid fa-microchip"></i></div>
+      <span class="nav-brand-name">PC<span>.</span>Point</span>
+    </a>
+
+    <div class="nav-search">
+      <i class="fa-solid fa-search search-icon"></i>
+      <input type="text" placeholder="Search support ticket, client, or issue..." id="queue-search-input">
+    </div>
+
+    <div class="nav-actions">
+      <a href="/queue.html" class="nav-icon-btn">
+        <i class="fa-solid fa-headset"></i> Support
+      </a>
+      <a href="/login.html" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-user"></i> Sign In
+      </a>
+      <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Category Navigation Bar -->
+  <nav class="cat-nav">
+    <ul class="cat-nav-list container">
+      <li><a href="/" class="cat-nav-link"><i class="fa-solid fa-house"></i> Home</a></li>
+      <li><a href="/products.html" class="cat-nav-link"><i class="fa-solid fa-store"></i> All Products</a></li>
+      <li><a href="/recommendation.html" class="cat-nav-link"><i class="fa-solid fa-screwdriver-wrench"></i> Build My PC</a></li>
+      <li><a href="/components.html" class="cat-nav-link"><i class="fa-solid fa-diagram-project"></i> Compatibility</a></li>
+      <li><a href="/sales.html" class="cat-nav-link"><i class="fa-solid fa-receipt"></i> Orders</a></li>
+      <li><a href="/queue.html" class="cat-nav-link active"><i class="fa-solid fa-headset"></i> Service Desk</a></li>
+    </ul>
+  </nav>
+
+  <!-- Mobile Drawer -->
+  <div class="mobile-drawer" id="mobile-drawer">
+    <div class="drawer-header">
+      <a href="/" class="nav-brand">
+        <div class="nav-logo-box"><i class="fa-solid fa-microchip"></i></div>
+        <span class="nav-brand-name" style="color:#fff;">PC<span>.</span>Point</span>
+      </a>
+      <button class="drawer-close" id="drawer-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <p class="drawer-section-title">Navigation</p>
+    <ul class="drawer-links">
+      <li><a href="/" class="drawer-link"><i class="fa-solid fa-house"></i> Home</a></li>
+      <li><a href="/products.html" class="drawer-link"><i class="fa-solid fa-store"></i> Products Catalog</a></li>
+      <li><a href="/recommendation.html" class="drawer-link"><i class="fa-solid fa-screwdriver-wrench"></i> Build My PC</a></li>
+      <li><a href="/components.html" class="drawer-link"><i class="fa-solid fa-diagram-project"></i> Compatibility Checker</a></li>
+      <li><a href="/sales.html" class="drawer-link"><i class="fa-solid fa-receipt"></i> Orders & History</a></li>
+      <li><a href="/queue.html" class="drawer-link active"><i class="fa-solid fa-headset"></i> Customer Support</a></li>
+      <li><a href="/index.html" class="drawer-link"><i class="fa-solid fa-chart-line"></i> Admin Portal</a></li>
+    </ul>
+  </div>
+  <div class="backdrop" id="backdrop"></div>
+
+  <main class="page-wrapper container" style="padding-top: 1.5rem; padding-bottom: 3.5rem;">
+
+    <!-- Title -->
+    <div class="reveal" style="margin-bottom: 2rem;">
+      <span class="badge badge-red" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-headset"></i> Customer Service & Hardware Support</span>
+      <h1>Customer Support & Consultation Desk</h1>
+      <p style="color: var(--text-muted); font-size: 1rem;">
+        Book a custom PC build consultation, hardware diagnosis, or monitor pending appointments in real-time.
+      </p>
+    </div>
+
+    <!-- Actions Grid -->
+    <div class="grid-2" style="margin-bottom: 2.5rem;">
+
+      <!-- Ticket Creation Form Card -->
+      <div class="card reveal-left">
+        <div class="card-header">
+          <h3 class="card-title" style="color: var(--primary-navy);"><i class="fa-solid fa-ticket" style="color: var(--accent-red);"></i> Create Support Ticket</h3>
+          <span class="badge badge-red">Book Appointment</span>
+        </div>
+
+        <form id="enqueue-form">
+          <div class="form-group">
+            <label class="form-label">Customer Full Name</label>
+            <input type="text" id="cust-name" class="form-control" placeholder="e.g. Vikram Patel" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contact Phone / WhatsApp</label>
+            <input type="tel" id="cust-phone" class="form-control" placeholder="e.g. 9876543210" value="9876543210">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Service / Consultation Type</label>
+            <select id="cust-service" class="form-control">
+              <option value="Custom PC Assembly Consultation">Custom PC Assembly Consultation</option>
+              <option value="GPU & Hardware Diagnostic">GPU & Hardware Repair Diagnostic</option>
+              <option value="Warranty Replacement Claim">Warranty Replacement Claim</option>
+              <option value="BIOS & Overclock Tuning">BIOS & Overclocking Tuning</option>
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 0.95rem; font-weight: 700;">
+            <i class="fa-solid fa-paper-plane"></i> Submit Support Ticket
+          </button>
+        </form>
+      </div>
+
+      <!-- Serve Next Customer Card -->
+      <div class="card reveal-right" style="border-left: 4px solid #16a34a; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div class="card-header">
+            <h3 class="card-title" style="color: #15803d;"><i class="fa-solid fa-user-check" style="color: #16a34a;"></i> Active Consultation Desk</h3>
+            <span class="badge badge-green">Now Serving</span>
+          </div>
+
+          <div id="front-customer-box" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 1.5rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+            <span class="badge badge-green" style="display: inline-block; margin-bottom: 0.6rem; font-weight: 800; letter-spacing: 0.5px;">
+              <i class="fa-solid fa-bell"></i> NEXT IN LINE
+            </span>
+            <h3 id="current-front-name" style="color: #15803d; font-size: 1.35rem; margin-bottom: 0.25rem;">No pending tickets</h3>
+            <p id="current-front-service" style="color: #166534; font-size: 0.9rem; margin-top: 0.2rem;">All scheduled customer consultations are currently completed.</p>
+          </div>
+        </div>
+
+        <button id="btn-dequeue" class="btn btn-primary" style="background: #16a34a; border-color: #16a34a; width: 100%; font-size: 1rem; font-weight: 700;">
+          <i class="fa-solid fa-headset"></i> Call & Serve Next Customer
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Active Service Queue Visualizer -->
+    <div class="card reveal-scale" style="margin-bottom: 2.5rem;">
+      <div class="card-header" style="background: linear-gradient(135deg, #f8fafc, #f1f5f9);">
+        <h3 class="card-title" style="color: var(--primary-navy);"><i class="fa-solid fa-users-line" style="color: var(--accent-red);"></i> Active Consultation Queue</h3>
+        <span class="badge badge-navy" id="queue-length-badge">0 Pending Appointments</span>
+      </div>
+
+      <div class="queue-strip" id="queue-visualizer-strip">
+        <div style="color: var(--text-muted); text-align: center; width: 100%; padding: 1.5rem;">Service queue is currently empty.</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand"><i class="fa-solid fa-bolt" style="color: var(--accent-red);"></i> PC POINT</div>
+          <p style="font-size: 0.9rem; color: #94a3b8;">
+            India's leading custom PC store, gaming rig builder, and high-performance computing hardware provider.
+          </p>
+        </div>
+
+        <div>
+          <h4>Store Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="home.html"><i class="fa-solid fa-chevron-right"></i> Storefront</a></li>
+            <li><a href="products.html"><i class="fa-solid fa-chevron-right"></i> Hardware Catalog</a></li>
+            <li><a href="sales.html"><i class="fa-solid fa-chevron-right"></i> Order History</a></li>
+            <li><a href="recommendation.html"><i class="fa-solid fa-chevron-right"></i> PC Builder</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Customer Care</h4>
+          <ul class="footer-links">
+            <li><a href="queue.html"><i class="fa-solid fa-chevron-right"></i> Support Desk Queue</a></li>
+            <li><a href="components.html"><i class="fa-solid fa-chevron-right"></i> Compatibility Checker</a></li>
+            <li><a href="login.html"><i class="fa-solid fa-chevron-right"></i> Admin Portal</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 PC Point Retail Ltd. All Rights Reserved.</p>
+        <div>
+          <a href="index.html" style="color: #64748b; margin-right: 1rem;">Admin Dashboard</a>
+          <a href="home.html" style="color: #64748b;">Customer Storefront</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+  <script src="queue.js"></script>
+</body>
+
+</html>

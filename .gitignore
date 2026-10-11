@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary office lock files
+~$*.docx
+~$*.pptx
+~$*.xlsx
+
+# Environment & local state
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Database files (optional: keep or ignore depending on whether seeded DB is tracked)
+*.sqlite3
+
+# IDE & OS files
+.DS_Store
+Thumbs.db

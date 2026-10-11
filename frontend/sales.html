@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PC Point – Order Management & Sales Records</title>
+  <meta name="description" content="View sales history, customer transaction logs, and manage retail orders at PC Point.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-inner container">
+      <span><i class="fa-solid fa-receipt"></i> <strong>Real-Time Retail Billing</strong> with Instant GST Tax Breakdown</span>
+      <span><i class="fa-solid fa-shield-halved"></i> <strong>Official Invoices</strong> generated for all orders</span>
+      <span><i class="fa-solid fa-headset"></i> Order Desk: <strong>+91 98765 43210</strong></span>
+    </div>
+  </div>
+
+  <!-- Main Navbar -->
+  <header class="navbar">
+    <a href="/" class="nav-brand">
+      <div class="nav-logo-box"><i class="fa-solid fa-microchip"></i></div>
+      <span class="nav-brand-name">PC<span>.</span>Point</span>
+    </a>
+
+    <div class="nav-search">
+      <i class="fa-solid fa-search search-icon"></i>
+      <input type="text" placeholder="Search orders by customer or ID..." id="sale-search-input">
+    </div>
+
+    <div class="nav-actions">
+      <a href="/queue.html" class="nav-icon-btn">
+        <i class="fa-solid fa-headset"></i> Support
+      </a>
+      <a href="/login.html" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-user"></i> Sign In
+      </a>
+      <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Category Navigation Bar -->
+  <nav class="cat-nav">
+    <ul class="cat-nav-list container">
+      <li><a href="/" class="cat-nav-link"><i class="fa-solid fa-house"></i> Home</a></li>
+      <li><a href="/products.html" class="cat-nav-link"><i class="fa-solid fa-store"></i> All Products</a></li>
+      <li><a href="/recommendation.html" class="cat-nav-link"><i class="fa-solid fa-screwdriver-wrench"></i> Build My PC</a></li>
+      <li><a href="/components.html" class="cat-nav-link"><i class="fa-solid fa-diagram-project"></i> Compatibility</a></li>
+      <li><a href="/sales.html" class="cat-nav-link active"><i class="fa-solid fa-receipt"></i> Orders</a></li>
+      <li><a href="/queue.html" class="cat-nav-link"><i class="fa-solid fa-headset"></i> Service Desk</a></li>
+    </ul>
+  </nav>
+
+  <!-- Mobile Drawer -->
+  <div class="mobile-drawer" id="mobile-drawer">
+    <div class="drawer-header">
+      <a href="/" class="nav-brand">
+        <div class="nav-logo-box"><i class="fa-solid fa-microchip"></i></div>
+        <span class="nav-brand-name" style="color:#fff;">PC<span>.</span>Point</span>
+      </a>
+      <button class="drawer-close" id="drawer-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <p class="drawer-section-title">Navigation</p>
+    <ul class="drawer-links">
+      <li><a href="/" class="drawer-link"><i class="fa-solid fa-house"></i> Home</a></li>
+      <li><a href="/products.html" class="drawer-link"><i class="fa-solid fa-store"></i> Products Catalog</a></li>
+      <li><a href="/recommendation.html" class="drawer-link"><i class="fa-solid fa-screwdriver-wrench"></i> Build My PC</a></li>
+      <li><a href="/components.html" class="drawer-link"><i class="fa-solid fa-diagram-project"></i> Compatibility Checker</a></li>
+      <li><a href="/sales.html" class="drawer-link active"><i class="fa-solid fa-receipt"></i> Orders & History</a></li>
+      <li><a href="/queue.html" class="drawer-link"><i class="fa-solid fa-headset"></i> Customer Support</a></li>
+      <li><a href="/login.html" class="drawer-link"><i class="fa-solid fa-user-shield"></i> Portal Sign In</a></li>
+    </ul>
+  </div>
+  <div class="backdrop" id="backdrop"></div>
+
+  <main class="page-wrapper container" style="padding-top: 2rem; padding-bottom: 4rem;">
+
+    <!-- Page Header -->
+    <div class="reveal" style="margin-bottom: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <span class="badge badge-red" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-receipt"></i> Store Transactions</span>
+          <h1>Order Management & Real-Time Sales Ledger</h1>
+          <p style="color: var(--text-muted); font-size: 0.95rem;">Process customer orders with automated line-item calculation, GST tax computation, and receipt generation.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-new-transaction" onclick="document.getElementById('new-sale-form').scrollIntoView({behavior: 'smooth'})">
+          <i class="fa-solid fa-plus"></i> New Transaction
+        </button>
+      </div>
+    </div>
+
+    <!-- Create Sale Form -->
+    <div class="card reveal-left" style="margin-bottom: 2.5rem; border-top: 4px solid var(--accent-red);">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-cart-plus" style="color: var(--accent-red);"></i> Record Customer Order</h3>
+        <span class="badge badge-red">Instant Processing</span>
+      </div>
+
+      <form id="new-sale-form">
+        <div class="grid-3">
+          <div class="form-group">
+            <label class="form-label">Customer Name</label>
+            <input type="text" id="customer-name" class="form-control" placeholder="e.g. Rahul Sharma" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Hardware Product</label>
+            <select id="sale-product" class="form-control" required>
+              <option value="">Loading inventory...</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Quantity</label>
+            <input type="number" id="sale-quantity" class="form-control" value="1" min="1" required>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; flex-wrap: wrap; gap: 1rem;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-preview-calculation" onclick="previewOrderCalculation()">
+            <i class="fa-solid fa-file-invoice-dollar" style="color: var(--accent-red);"></i> Preview Tax & Invoice Ledger
+          </button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Complete & Print Receipt</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Itemized Invoice & Tax Ledger Modal / Box -->
+    <div class="card reveal-right" id="billing-ledger-card" style="margin-bottom: 2.5rem; display: none; border-left: 4px solid var(--accent-red);">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-file-invoice" style="color: var(--accent-red);"></i> Itemized Order Calculation & Tax Ledger</h3>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="badge badge-navy">Audit Breakdown</span>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('billing-ledger-card').style.display='none'" style="padding: 2px 8px;" title="Close Ledger">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+      <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Detailed transaction audit ledger showing real-time unit price calculation, 18% GST tax application, and promotional discount deductions:
+      </p>
+
+      <div id="billing-ledger-container" style="display: flex; flex-direction: column; gap: 0.6rem;">
+        <!-- Dynamic Ledger Steps populate here -->
+      </div>
+    </div>
+
+    <!-- Sales History Table -->
+    <div class="card reveal">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary-navy);"></i> Recent Orders Log</h3>
+        <span class="badge badge-navy" id="sales-count-badge">0 Orders</span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Items Ordered</th>
+              <th>Total Amount</th>
+              <th>Timestamp</th>
+              <th>Invoice Breakdown</th>
+            </tr>
+          </thead>
+          <tbody id="sales-tbody">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading sales history...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand"><i class="fa-solid fa-bolt" style="color: var(--accent-red);"></i> PC POINT</div>
+          <p style="font-size: 0.9rem; color: #94a3b8;">
+            India's leading custom PC store, gaming rig builder, and high-performance computing hardware provider.
+          </p>
+        </div>
+
+        <div>
+          <h4>Store Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="home.html"><i class="fa-solid fa-chevron-right"></i> Storefront</a></li>
+            <li><a href="products.html"><i class="fa-solid fa-chevron-right"></i> Hardware Catalog</a></li>
+            <li><a href="sales.html"><i class="fa-solid fa-chevron-right"></i> Order History</a></li>
+            <li><a href="recommendation.html"><i class="fa-solid fa-chevron-right"></i> PC Builder</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Customer Care</h4>
+          <ul class="footer-links">
+            <li><a href="queue.html"><i class="fa-solid fa-chevron-right"></i> Support Desk Queue</a></li>
+            <li><a href="components.html"><i class="fa-solid fa-chevron-right"></i> Compatibility Checker</a></li>
+            <li><a href="login.html"><i class="fa-solid fa-chevron-right"></i> Admin Portal</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 PC Point Retail Ltd. All Rights Reserved.</p>
+        <div>
+          <a href="index.html" style="color: #64748b; margin-right: 1rem;">Admin Dashboard</a>
+          <a href="home.html" style="color: #64748b;">Customer Storefront</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+  <script src="sales.js"></script>
+</body>
+</html>

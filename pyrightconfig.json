@@ -1,0 +1,12 @@
+{
+  "include": [
+    "backend"
+  ],
+  "extraPaths": [
+    "backend",
+    "backend/data_structures",
+    "backend/algorithms"
+  ],
+  "reportMissingImports": "none",
+  "reportMissingModuleSource": "none"
+}

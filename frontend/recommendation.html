@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PC Point – Custom PC Budget Builder & Hardware Optimizer</title>
+  <meta name="description" content="Build your custom PC within budget using PC Point's smart hardware bundle optimizer and component recommendation engine.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-inner container">
+      <span><i class="fa-solid fa-truck-fast"></i> <strong>Free Assembly & Delivery</strong> on custom builds</span>
+      <span><i class="fa-solid fa-shield-halved"></i> <strong>3-Year Warranty</strong> on all rig components</span>
+      <span><i class="fa-solid fa-headset"></i> Rig Support: <strong>+91 98765 43210</strong></span>
+    </div>
+  </div>
+
+  <!-- Main Navbar -->
+  <header class="navbar">
+    <a href="/" class="nav-brand">
+      <div class="nav-logo-box"><i class="fa-solid fa-microchip"></i></div>
+      <span class="nav-brand-name">PC<span>.</span>Point</span>
+    </a>
+
+    <div class="nav-search">
+      <i class="fa-solid fa-search search-icon"></i>
+      <input type="text" placeholder="Search components for custom build..." id="global-search">
+    </div>
+
+    <div class="nav-actions">
+      <a href="/queue.html" class="nav-icon-btn">
+        <i class="fa-solid fa-headset"></i> Support
+      </a>
+      <a href="/login.html" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-user"></i> Sign In
+      </a>
+      <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Category Navigation Bar -->
+  <nav class="cat-nav">
+    <ul class="cat-nav-list container">
+      <li><a href="/" class="cat-nav-link"><i class="fa-solid fa-house"></i> Home</a></li>
+      <li><a href="/products.html" class="cat-nav-link"><i class="fa-solid fa-store"></i> All Products</a></li>
+      <li><a href="/recommendation.html" class="cat-nav-link active"><i class="fa-solid fa-screwdriver-wrench"></i> Build My PC</a></li>
+      <li><a href="/components.html" class="cat-nav-link"><i class="fa-solid fa-diagram-project"></i> Compatibility</a></li>
+      <li><a href="/sales.html" class="cat-nav-link"><i class="fa-solid fa-receipt"></i> Orders</a></li>
+      <li><a href="/queue.html" class="cat-nav-link"><i class="fa-solid fa-headset"></i> Service Desk</a></li>
+    </ul>
+  </nav>
+
+  <!-- Mobile Drawer -->
+  <div class="mobile-drawer" id="mobile-drawer">
+    <div class="drawer-header">
+      <a href="/" class="nav-brand">
+        <div class="nav-logo-box"><i class="fa-solid fa-microchip"></i></div>
+        <span class="nav-brand-name" style="color:#fff;">PC<span>.</span>Point</span>
+      </a>
+      <button class="drawer-close" id="drawer-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <p class="drawer-section-title">Navigation</p>
+    <ul class="drawer-links">
+      <li><a href="/" class="drawer-link"><i class="fa-solid fa-house"></i> Home</a></li>
+      <li><a href="/products.html" class="drawer-link"><i class="fa-solid fa-store"></i> Products Catalog</a></li>
+      <li><a href="/recommendation.html" class="drawer-link active"><i class="fa-solid fa-screwdriver-wrench"></i> Build My PC</a></li>
+      <li><a href="/components.html" class="drawer-link"><i class="fa-solid fa-diagram-project"></i> Compatibility Checker</a></li>
+      <li><a href="/sales.html" class="drawer-link"><i class="fa-solid fa-receipt"></i> Orders & History</a></li>
+      <li><a href="/queue.html" class="drawer-link"><i class="fa-solid fa-headset"></i> Customer Support</a></li>
+      <li><a href="/login.html" class="drawer-link"><i class="fa-solid fa-user-shield"></i> Portal Sign In</a></li>
+    </ul>
+  </div>
+  <div class="backdrop" id="backdrop"></div>
+
+  <main class="page-wrapper container" style="padding-top: 2rem; padding-bottom: 4rem;">
+    
+    <!-- Title -->
+    <div class="reveal" style="margin-bottom: 2rem;">
+      <span class="badge badge-red" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> Custom PC Configurator</span>
+      <h1>Smart Budget PC Builder & Component Bundle Optimizer</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Enter your target budget and component preferences to automatically generate the maximum performance hardware build.
+      </p>
+      <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap;">
+        <button type="button" class="btn btn-primary" id="tab-btn-auto" onclick="switchBuilderTab('auto')">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Smart Value Configurator
+        </button>
+        <button type="button" class="btn btn-secondary" id="tab-btn-manual" onclick="switchBuilderTab('manual')">
+          <i class="fa-solid fa-wrench"></i> Interactive PC Part Picker
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 1: Smart Budget Optimizer -->
+    <div id="section-auto-builder">
+      <!-- Budget Input Form Card -->
+      <div class="card reveal-scale" style="margin-bottom: 2.5rem; border-top: 4px solid var(--accent-red);">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fa-solid fa-sliders" style="color: var(--accent-red);"></i> Custom PC Configurator Inputs</h3>
+          <span class="badge badge-red">AI Value Optimizer</span>
+        </div>
+
+        <form id="recommendation-form">
+          <div class="grid-2" style="margin-bottom: 1.5rem;">
+            
+            <div class="form-group">
+              <label class="form-label" style="display: flex; justify-content: space-between;">
+                <span>Target Build Budget (₹)</span>
+                <strong id="budget-val-display" style="color: var(--accent-red); font-size: 1.15rem;">₹ 60,000</strong>
+              </label>
+              <input type="range" id="budget-range" min="10000" max="250000" step="5000" value="60000" style="width: 100%; accent-color: var(--accent-red); margin: 0.5rem 0;">
+              <input type="number" id="budget-number" class="form-control" value="60000" min="5000" step="1000" required>
+              
+              <!-- Quick Budget Presets -->
+              <div style="margin-top: 0.85rem;">
+                <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.4rem;">Quick Budget Tiers:</span>
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                  <button type="button" class="preset-budget-btn" onclick="setPresetBudget(40000)">₹40K (Entry)</button>
+                  <button type="button" class="preset-budget-btn active" onclick="setPresetBudget(60000)">₹60K (Gaming)</button>
+                  <button type="button" class="preset-budget-btn" onclick="setPresetBudget(100000)">₹1L (Pro Rig)</button>
+                  <button type="button" class="preset-budget-btn" onclick="setPresetBudget(180000)">₹1.8L (Ultra)</button>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label">Desired Hardware Categories</label>
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem; margin-top: 0.5rem;">
+                <label style="font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+                  <input type="checkbox" name="categories" value="Laptop" checked style="accent-color: var(--accent-red);"> Laptops
+                </label>
+                <label style="font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+                  <input type="checkbox" name="categories" value="Desktop" checked style="accent-color: var(--accent-red);"> Desktop Rigs
+                </label>
+                <label style="font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+                  <input type="checkbox" name="categories" value="GPU" checked style="accent-color: var(--accent-red);"> Graphics Cards
+                </label>
+                <label style="font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+                  <input type="checkbox" name="categories" value="RAM" checked style="accent-color: var(--accent-red);"> Memory (RAM)
+                </label>
+                <label style="font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+                  <input type="checkbox" name="categories" value="SSD" checked style="accent-color: var(--accent-red);"> NVMe Storage
+                </label>
+                <label style="font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+                  <input type="checkbox" name="categories" value="Monitor" checked style="accent-color: var(--accent-red);"> Displays / Monitors
+                </label>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary" style="font-size: 1rem;"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Best-Value Custom Build</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Optimization Results Output -->
+      <div id="recommendation-results" style="display: none;">
+        
+        <!-- Summary KPI Banner -->
+        <div class="card reveal-left" style="margin-bottom: 2rem; background: linear-gradient(135deg, #161b26 0%, #0f172a 100%); color: #fff; border: 1px solid rgba(255,255,255,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-check"></i> Optimal Bundle Recommended</span>
+              <h2 style="color: #fff; font-size: 1.8rem;" id="res-total-cost">Total Build Price: ₹ 0</h2>
+              <p style="color: #94a3b8; font-size: 0.9rem;" id="res-budget-utilization">Budget Utilized: 0%</p>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+              <div style="text-align: center; background: rgba(255,255,255,0.08); padding: 0.75rem 1.25rem; border-radius: 8px;">
+                <span style="font-size: 0.75rem; color: #94a3b8; display: block;">Items Bundled</span>
+                <strong style="font-size: 1.4rem; color: #e63946;" id="res-item-count">0</strong>
+              </div>
+              <div style="text-align: center; background: rgba(255,255,255,0.08); padding: 0.75rem 1.25rem; border-radius: 8px;">
+                <span style="font-size: 0.75rem; color: #94a3b8; display: block;">Remaining Unused</span>
+                <strong style="font-size: 1.4rem; color: #22c55e;" id="res-remaining-budget">₹ 0</strong>
+              </div>
+              <button class="btn btn-primary" onclick="orderCurrentBuild()" style="background:#22c55e;border-color:#16a34a;font-weight:700;">
+                <i class="fa-solid fa-cart-shopping"></i> Order This Build
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommended Hardware Bundle Table -->
+        <div class="card reveal" style="margin-bottom: 2.5rem;">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-boxes-packing" style="color: var(--primary-navy);"></i> Recommended Build Parts List</h3>
+            <span class="badge badge-navy">Optimized Bundle</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Part ID</th>
+                  <th>Hardware Item</th>
+                  <th>Category</th>
+                  <th>Unit Price</th>
+                  <th>Stock</th>
+                  <th>Build Status</th>
+                </tr>
+              </thead>
+              <tbody id="recommendation-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Allocation Breakdown Card -->
+        <div class="card reveal-right" style="margin-bottom: 2.5rem; border-left: 4px solid var(--accent-red);">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-list-check" style="color: var(--accent-red);"></i> Real-Time Component Allocation & Budget Ledger</h3>
+            <span class="badge badge-navy">Live Selection</span>
+          </div>
+          <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Every component is evaluated in real time against your configured target budget to deliver maximum performance and value:
+          </p>
+          <div id="value-allocation-trace" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 350px; overflow-y: auto; padding-right: 0.5rem;">
+            <!-- Dynamic decision trace steps populate here -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: Interactive Manual PC Part Picker -->
+    <div id="section-manual-builder" style="display: none;">
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
+        
+        <!-- Slot Selectors -->
+        <div class="card reveal-left">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-wrench" style="color: var(--accent-red);"></i> Select Hardware Components</h3>
+            <span class="badge badge-navy">Custom Rig Configurator</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <!-- Base Machine Slot -->
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-desktop" style="color: var(--accent-red);"></i> 1. Base System (Desktop / Laptop)
+              </label>
+              <select id="slot-base" class="form-control" onchange="updateCustomRigCalculation()">
+                <option value="">-- Choose Base Computer --</option>
+              </select>
+            </div>
+
+            <!-- GPU Slot -->
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-display" style="color: var(--accent-red);"></i> 2. Graphics Card (GPU)
+              </label>
+              <select id="slot-gpu" class="form-control" onchange="updateCustomRigCalculation()">
+                <option value="">-- Choose Graphics Card (Optional) --</option>
+              </select>
+            </div>
+
+            <!-- RAM Slot -->
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-memory" style="color: var(--accent-red);"></i> 3. Memory (RAM)
+              </label>
+              <select id="slot-ram" class="form-control" onchange="updateCustomRigCalculation()">
+                <option value="">-- Choose Memory (Optional) --</option>
+              </select>
+            </div>
+
+            <!-- Storage Slot -->
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-hard-drive" style="color: var(--accent-red);"></i> 4. NVMe Fast Storage (SSD)
+              </label>
+              <select id="slot-ssd" class="form-control" onchange="updateCustomRigCalculation()">
+                <option value="">-- Choose Storage Drive (Optional) --</option>
+              </select>
+            </div>
+
+            <!-- Display Monitor Slot -->
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-tv" style="color: var(--accent-red);"></i> 5. Monitor / Display
+              </label>
+              <select id="slot-monitor" class="form-control" onchange="updateCustomRigCalculation()">
+                <option value="">-- Choose Monitor (Optional) --</option>
+              </select>
+            </div>
+
+            <!-- Peripheral Slot -->
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-keyboard" style="color: var(--accent-red);"></i> 6. Keyboard / Mouse
+              </label>
+              <select id="slot-peripheral" class="form-control" onchange="updateCustomRigCalculation()">
+                <option value="">-- Choose Peripheral (Optional) --</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-Time Build Summary Sidebar -->
+        <div class="card reveal-right" style="position: sticky; top: 90px; border-top: 4px solid var(--accent-red);">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-receipt" style="color: var(--accent-red);"></i> Rig Summary</h3>
+            <span class="badge badge-green" id="rig-compat-badge"><i class="fa-solid fa-check"></i> Compatible</span>
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">Estimated Rig Total</div>
+            <div style="font-size: 2rem; font-weight: 800; color: var(--accent-red);" id="rig-total-display">₹ 0</div>
+          </div>
+
+          <div id="rig-selected-list" style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; min-height: 80px;">
+            <em>No parts selected yet. Pick hardware components to start your custom build.</em>
+          </div>
+
+          <button class="btn btn-primary" id="btn-order-rig" onclick="orderCustomRig()" style="width: 100%;" disabled>
+            <i class="fa-solid fa-bolt"></i> Order This Custom Rig
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand"><i class="fa-solid fa-bolt" style="color: var(--accent-red);"></i> PC POINT</div>
+          <p style="font-size: 0.9rem; color: #94a3b8;">
+            India's leading custom PC store, gaming rig builder, and high-performance computing hardware provider.
+          </p>
+        </div>
+
+        <div>
+          <h4>Store Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="home.html"><i class="fa-solid fa-chevron-right"></i> Storefront</a></li>
+            <li><a href="products.html"><i class="fa-solid fa-chevron-right"></i> Hardware Catalog</a></li>
+            <li><a href="sales.html"><i class="fa-solid fa-chevron-right"></i> Order History</a></li>
+            <li><a href="recommendation.html"><i class="fa-solid fa-chevron-right"></i> PC Builder</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Customer Care</h4>
+          <ul class="footer-links">
+            <li><a href="queue.html"><i class="fa-solid fa-chevron-right"></i> Support Desk Queue</a></li>
+            <li><a href="components.html"><i class="fa-solid fa-chevron-right"></i> Compatibility Checker</a></li>
+            <li><a href="login.html"><i class="fa-solid fa-chevron-right"></i> Admin Portal</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 PC Point Retail Ltd. All Rights Reserved.</p>
+        <div>
+          <a href="index.html" style="color: #64748b; margin-right: 1rem;">Admin Dashboard</a>
+          <a href="home.html" style="color: #64748b;">Customer Storefront</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+  <script src="recommendation.js"></script>
+</body>
+</html>

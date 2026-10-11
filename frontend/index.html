@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PC Point – Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .admin-nav-link {
+      display: flex; align-items: center; gap: 0.4rem;
+      color: var(--text-2); font-size: 0.88rem; font-weight: 500;
+      padding: 0.4rem 0.7rem; border-radius: var(--r-sm);
+      text-decoration: none; transition: all var(--t-fast);
+    }
+    .admin-nav-link:hover, .admin-nav-link.active {
+      background: var(--red-light); color: var(--red);
+    }
+    .module-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 1.5rem;
+      display: flex; flex-direction: column;
+      justify-content: space-between;
+      transition: all var(--t-normal);
+      min-height: 200px;
+    }
+    .module-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-3px);
+    }
+    .module-icon {
+      width: 52px; height: 52px; border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="scroll-progress"></div>
+
+  <!-- Admin Navbar -->
+  <header class="navbar">
+    <a href="/" class="nav-brand">
+      <div class="nav-logo-box"><i class="fa-solid fa-microchip"></i></div>
+      <span class="nav-brand-name">PC<span>.</span>Point</span>
+    </a>
+
+    <nav style="display:flex; align-items:center; gap:0.25rem; flex-wrap:wrap;">
+      <a href="/index.html" class="admin-nav-link active"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+      <a href="/products.html" class="admin-nav-link"><i class="fa-solid fa-boxes-stacked"></i> Products</a>
+      <a href="/sales.html" class="admin-nav-link"><i class="fa-solid fa-receipt"></i> Orders</a>
+      <a href="/queue.html" class="admin-nav-link"><i class="fa-solid fa-headset"></i> Service</a>
+      <a href="/components.html" class="admin-nav-link"><i class="fa-solid fa-diagram-project"></i> Components</a>
+      <a href="/recommendation.html" class="admin-nav-link"><i class="fa-solid fa-screwdriver-wrench"></i> Builder</a>
+    </nav>
+
+    <div class="nav-actions">
+      <a href="/" class="btn btn-ghost btn-sm"><i class="fa-solid fa-store"></i> Storefront</a>
+      <a href="/login.html" class="btn btn-primary btn-sm"><i class="fa-solid fa-user"></i> Sign In</a>
+      <button class="hamburger-btn" id="hamburger-btn"><i class="fa-solid fa-bars"></i></button>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer -->
+  <div class="mobile-drawer" id="mobile-drawer">
+    <div class="drawer-header">
+      <a href="/" class="nav-brand">
+        <div class="nav-logo-box"><i class="fa-solid fa-microchip"></i></div>
+        <span class="nav-brand-name" style="color:#fff;">PC<span>.</span>Point</span>
+      </a>
+      <button class="drawer-close" id="drawer-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <p class="drawer-section-title">Admin Panel</p>
+    <ul class="drawer-links">
+      <li><a href="/index.html" class="drawer-link active"><i class="fa-solid fa-gauge-high"></i> Dashboard</a></li>
+      <li><a href="/products.html" class="drawer-link"><i class="fa-solid fa-boxes-stacked"></i> Product Inventory</a></li>
+      <li><a href="/sales.html" class="drawer-link"><i class="fa-solid fa-receipt"></i> Order Management</a></li>
+      <li><a href="/queue.html" class="drawer-link"><i class="fa-solid fa-headset"></i> Service Desk</a></li>
+      <li><a href="/components.html" class="drawer-link"><i class="fa-solid fa-diagram-project"></i> Component Graph</a></li>
+      <li><a href="/recommendation.html" class="drawer-link"><i class="fa-solid fa-screwdriver-wrench"></i> PC Budget Builder</a></li>
+      <li><a href="/" class="drawer-link"><i class="fa-solid fa-store"></i> Public Storefront</a></li>
+    </ul>
+  </div>
+  <div class="backdrop" id="backdrop"></div>
+
+  <main>
+    <!-- Page Header -->
+    <div class="page-hero">
+      <div class="container" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+        <div class="reveal-left">
+          <div class="page-hero-breadcrumb">
+            <a href="/">Home</a> <i class="fa-solid fa-chevron-right" style="font-size:0.65rem;"></i>
+            <span>Admin Dashboard</span>
+          </div>
+          <h1 class="page-hero-title">Store Dashboard</h1>
+          <p style="color:#94a3b8;font-size:0.9rem;" id="dashboard-date">Loading...</p>
+        </div>
+        <div class="reveal-right">
+          <a href="/products.html" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add New Product</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="container" style="padding-top:2rem; padding-bottom:4rem;">
+
+      <!-- KPI Stats Row -->
+      <div class="grid-4" style="margin-bottom:2.5rem;">
+
+        <div class="kpi-card reveal-scale">
+          <div class="kpi-icon-wrap" style="background:#fff1f2; color:var(--red);">
+            <i class="fa-solid fa-boxes-stacked"></i>
+          </div>
+          <div style="flex:1;">
+            <div class="kpi-label">Products in Stock</div>
+            <div class="kpi-value" id="stat-products">—</div>
+            <div class="kpi-meta">Total inventory items</div>
+          </div>
+        </div>
+
+        <div class="kpi-card reveal-scale delay-1">
+          <div class="kpi-icon-wrap" style="background:#f5f3ff; color:var(--purple);">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+          <div style="flex:1;">
+            <div class="kpi-label">Orders Completed</div>
+            <div class="kpi-value" id="stat-sales">—</div>
+            <div class="kpi-meta">Total transactions recorded</div>
+          </div>
+        </div>
+
+        <div class="kpi-card reveal-scale delay-2">
+          <div class="kpi-icon-wrap" style="background:#dcfce7; color:var(--green);">
+            <i class="fa-solid fa-headset"></i>
+          </div>
+          <div style="flex:1;">
+            <div class="kpi-label">Awaiting Service</div>
+            <div class="kpi-value" id="stat-queue">—</div>
+            <div class="kpi-meta">Customers in service queue</div>
+          </div>
+        </div>
+
+        <div class="kpi-card reveal-scale delay-3">
+          <div class="kpi-icon-wrap" style="background:#eff6ff; color:var(--blue);">
+            <i class="fa-solid fa-diagram-project"></i>
+          </div>
+          <div style="flex:1;">
+            <div class="kpi-label">Component Links</div>
+            <div class="kpi-value" id="stat-graph">—</div>
+            <div class="kpi-meta">Hardware compatibility nodes</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Module Launcher Cards -->
+      <div class="section-header reveal">
+        <div>
+          <h2 class="section-title">Manage Your Store</h2>
+          <p class="section-subtitle">Access all operations from here</p>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-bottom:3rem;">
+
+        <div class="module-card reveal-scale">
+          <div>
+            <div class="module-icon" style="background:#fff1f2; color:var(--red);">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <h3 style="font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:0.4rem;">Product Inventory</h3>
+            <p style="font-size:0.87rem;color:var(--text-2);">Add, remove, and search products. Sort catalog by price or name easily.</p>
+          </div>
+          <a href="/products.html" class="btn btn-primary btn-sm mt-3">
+            <i class="fa-solid fa-arrow-right"></i> Manage Products
+          </a>
+        </div>
+
+        <div class="module-card reveal-scale delay-1">
+          <div>
+            <div class="module-icon" style="background:#f5f3ff; color:var(--purple);">
+              <i class="fa-solid fa-receipt"></i>
+            </div>
+            <h3 style="font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:0.4rem;">Order Management</h3>
+            <p style="font-size:0.87rem;color:var(--text-2);">Record new customer orders and view complete sales history in real-time.</p>
+          </div>
+          <a href="/sales.html" class="btn btn-navy btn-sm mt-3" style="background:var(--purple);border-color:var(--purple);">
+            <i class="fa-solid fa-arrow-right"></i> View Orders
+          </a>
+        </div>
+
+        <div class="module-card reveal-scale delay-2">
+          <div>
+            <div class="module-icon" style="background:#dcfce7; color:var(--green);">
+              <i class="fa-solid fa-headset"></i>
+            </div>
+            <h3 style="font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:0.4rem;">Service Desk</h3>
+            <p style="font-size:0.87rem;color:var(--text-2);">Customer support booking queue. Add customers and track active appointments.</p>
+          </div>
+          <a href="/queue.html" class="btn btn-navy btn-sm mt-3" style="background:var(--green);border-color:var(--green);">
+            <i class="fa-solid fa-arrow-right"></i> Open Service Desk
+          </a>
+        </div>
+
+        <div class="module-card reveal-scale">
+          <div>
+            <div class="module-icon" style="background:#eff6ff; color:var(--blue);">
+              <i class="fa-solid fa-diagram-project"></i>
+            </div>
+            <h3 style="font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:0.4rem;">PC Compatibility</h3>
+            <p style="font-size:0.87rem;color:var(--text-2);">Visualize hardware component relationships and check part compatibility.</p>
+          </div>
+          <a href="/components.html" class="btn btn-navy btn-sm mt-3" style="background:var(--blue);border-color:var(--blue);">
+            <i class="fa-solid fa-arrow-right"></i> Check Compatibility
+          </a>
+        </div>
+
+        <div class="module-card reveal-scale delay-1">
+          <div>
+            <div class="module-icon" style="background:#fff7ed; color:var(--orange);">
+              <i class="fa-solid fa-screwdriver-wrench"></i>
+            </div>
+            <h3 style="font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:0.4rem;">PC Budget Builder</h3>
+            <p style="font-size:0.87rem;color:var(--text-2);">Enter a customer's budget and auto-generate the best possible PC configuration from available stock.</p>
+          </div>
+          <a href="/recommendation.html" class="btn btn-navy btn-sm mt-3" style="background:var(--orange);border-color:var(--orange);">
+            <i class="fa-solid fa-arrow-right"></i> Configure a Build
+          </a>
+        </div>
+
+        <div class="module-card reveal-scale delay-2" style="background:var(--navy);border-color:var(--navy);">
+          <div>
+            <div class="module-icon" style="background:rgba(255,255,255,0.1); color:#60a5fa;">
+              <i class="fa-solid fa-server"></i>
+            </div>
+            <h3 style="font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:0.4rem;color:#fff;">System Status</h3>
+            <p style="font-size:0.87rem;color:#94a3b8;">Python Flask REST API · SQLite3 Database · All systems active and operational.</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1.25rem;">
+            <span class="stock-badge in-stock" style="color:#4ade80;"><span class="stock-dot" style="background:#4ade80;"></span> All Systems Online</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="justify-content:center;text-align:center;">
+        <div>
+          <p>© 2026 PC Point Admin Portal. All rights reserved.</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Set current date
+      const now = new Date();
+      document.getElementById('dashboard-date').textContent =
+        now.toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+      // Load KPI stats
+      try {
+        const stats = await apiCall('/api/stats');
+        const animateCounter = (el, target) => {
+          let cur = 0;
+          const step = Math.max(1, Math.ceil(target / 30));
+          const t = setInterval(() => {
+            cur = Math.min(cur + step, target);
+            el.textContent = cur;
+            if (cur >= target) clearInterval(t);
+          }, 40);
+        };
+        animateCounter(document.getElementById('stat-products'), stats.total_products || 0);
+        animateCounter(document.getElementById('stat-sales'), stats.total_sales || 0);
+        animateCounter(document.getElementById('stat-queue'), stats.queue_length || 0);
+        animateCounter(document.getElementById('stat-graph'), stats.graph_nodes || 0);
+      } catch (e) {
+        ['stat-products','stat-sales','stat-queue','stat-graph'].forEach(id => {
+          document.getElementById(id).textContent = '0';
+        });
+      }
+    });
+  </script>
+</body>
+</html>
