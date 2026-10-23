@@ -293,7 +293,7 @@ function addToCartFromDetail(productId) {
   openCartDrawer();
 }
 
-function buyNow(productId) {
+async function buyNow(productId) {
   const p = allProducts.find(x => x.id === productId);
   if (!p || p.stock === 0) return;
   const qtyInput = document.getElementById('detail-qty');
@@ -302,6 +302,8 @@ function buyNow(productId) {
   cart = [{ id: p.id, name: p.name, brand: p.brand, price: p.price, qty: Math.min(qty, p.stock), stock: p.stock }];
   updateCartBadge();
   closeProductDetail();
+  // Wait for session to be confirmed before checking auth
+  await sessionReady;
   if (!window.pcSession?.authenticated) {
     showAuthPromptModal();
     return;
@@ -454,6 +456,9 @@ function removeFromCart(idx) {
 
 async function proceedToCheckout() {
   if (cart.length === 0) return;
+
+  // Wait for session to be confirmed before checking auth
+  await sessionReady;
 
   // Authorization check: only authorized users can purchase
   if (!window.pcSession?.authenticated) {

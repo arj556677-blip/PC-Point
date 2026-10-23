@@ -7,6 +7,9 @@
 // GLOBAL SESSION & PRIVACY STATE
 // ============================================================
 let pcSession = { authenticated: false, user: null };
+let _sessionReadyResolve;
+// Resolves once initSession() has finished — other scripts can await this
+const sessionReady = new Promise(res => { _sessionReadyResolve = res; });
 
 let idleTimer = null;
 let shieldTimer = null;
@@ -17,6 +20,7 @@ const IDLE_TIMEOUT_MS = 15 * 60 * 1000;      // 15 minutes: Session automaticall
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initSession();
+  _sessionReadyResolve(); // Signal that session is ready
   checkPageSecurity();
   initScrollObserver();
   initScrollProgress();
