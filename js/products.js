@@ -451,12 +451,12 @@ function removeFromCart(idx) {
 async function proceedToCheckout() {
   if (cart.length === 0) return;
 
-  // Show checkout confirmation modal
   const existing = document.getElementById('checkout-modal');
   if (existing) existing.remove();
 
   const totalPrice = cart.reduce((s, c) => s + (c.price * c.qty), 0);
   const totalWithTax = totalPrice * 1.18;
+  const defaultName = (window.pcSession?.user?.name) || '';
 
   const modal = document.createElement('div');
   modal.id = 'checkout-modal';
@@ -479,9 +479,9 @@ async function proceedToCheckout() {
         <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:#64748b;margin-bottom:0.35rem;"><span>Subtotal</span><span>${formatCurrency(totalPrice)}</span></div>
         <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:#64748b;margin-bottom:0.75rem;"><span>GST (18%)</span><span>${formatCurrency(totalPrice * 0.18)}</span></div>
         <div style="display:flex;justify-content:space-between;font-size:1.1rem;font-weight:800;color:#16a34a;border-top:2px solid #e2e8f0;padding-top:0.75rem;margin-bottom:1.25rem;"><span>Total Payable</span><span>${formatCurrency(totalWithTax)}</span></div>
-        <div style="margin-bottom:1rem;">
+        <div style="margin-bottom:1.25rem;">
           <label style="font-size:0.83rem;font-weight:600;color:#475569;display:block;margin-bottom:0.4rem;">Customer Name</label>
-          <input id="checkout-customer" type="text" class="form-control" placeholder="Enter customer name" style="width:100%;" />
+          <input id="checkout-customer" type="text" class="form-control" placeholder="Enter customer name" value="${escapeHtml(defaultName)}" style="width:100%;" />
         </div>
         <div style="display:flex;gap:0.75rem;">
           <button onclick="document.getElementById('checkout-modal').remove()" class="btn btn-ghost" style="flex:1;">Cancel</button>
@@ -497,31 +497,79 @@ async function proceedToCheckout() {
 }
 
 async function confirmPurchase() {
-  const customerName = (document.getElementById('checkout-customer')?.value || '').trim() || 'Walk-in Customer';
+  const customerName = (document.getElementById('checkout-customer')?.value || '').trim() || (window.pcSession?.user?.name) || 'Customer';
   const btn = document.querySelector('#checkout-modal button[onclick="confirmPurchase()"]');
   if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'; btn.disabled = true; }
 
   try {
-    // Record each cart item as a sale via the existing API
-    for (const item of cart) {
-      await apiCall('/api/sales', 'POST', {
-        product_id: item.id,
-        quantity: item.qty,
-        customer_name: customerName
-      });
-    }
+    const itemsPayload = cart.map(item => ({
+      product_id: item.id,
+      quantity: item.qty
+    }));
 
-    // Success
+    const res = await apiCall('/api/sales', 'POST', {
+      customer_name: customerName,
+      items: itemsPayload,
+      tax_rate: 0.18,
+      discount: 0.0
+    });
+
+    // Clean up checkout modal and cart
     document.getElementById('checkout-modal')?.remove();
     closeCartDrawer();
     cart = [];
     updateCartBadge();
-    showToast('Order placed successfully! Thank you.', 'success');
     loadProducts(); // Refresh stock
+
+    // Show nice confirmation modal
+    showOrderSuccessModal(res?.sale || { customer_name: customerName });
   } catch (e) {
     showToast('Order failed: ' + e.message, 'error');
     if (btn) { btn.innerHTML = '<i class="fa-solid fa-check"></i> Confirm Order'; btn.disabled = false; }
   }
+}
+
+function showOrderSuccessModal(sale) {
+  const existing = document.getElementById('order-success-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'order-success-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:6000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+
+  const orderNum = sale.id ? `#ORD-${String(sale.id).padStart(4, '0')}` : '#CONFIRMED';
+  const total = sale.total ? formatCurrency(sale.total) : 'Paid';
+
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:440px;text-align:center;padding:2rem 1.75rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:slideUp 0.35s ease;">
+      <div style="width:70px;height:70px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+        <i class="fa-solid fa-check" style="font-size:2rem;color:#16a34a;"></i>
+      </div>
+      <h3 style="margin:0 0 0.5rem;font-size:1.4rem;color:#0f172a;">Order Placed Successfully!</h3>
+      <p style="color:#64748b;font-size:0.9rem;margin:0 0 1.25rem;">Thank you, <strong style="color:#0f172a;">${escapeHtml(sale.customer_name || 'Customer')}</strong>. Your hardware order has been registered.</p>
+      
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1rem;margin-bottom:1.5rem;text-align:left;font-size:0.875rem;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+          <span style="color:#64748b;">Order Ref:</span>
+          <strong style="color:#0f172a;">${orderNum}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+          <span style="color:#64748b;">Date:</span>
+          <span style="color:#0f172a;">${sale.date || 'Just now'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:1px dashed #cbd5e1;padding-top:0.5rem;margin-top:0.5rem;">
+          <strong style="color:#0f172a;">Total Amount:</strong>
+          <strong style="color:#16a34a;font-size:1.05rem;">${total}</strong>
+        </div>
+      </div>
+
+      <button onclick="document.getElementById('order-success-modal').remove()" class="btn btn-primary" style="width:100%;padding:0.75rem;font-size:0.95rem;background:#16a34a;border-color:#16a34a;">
+        <i class="fa-solid fa-bag-shopping" style="margin-right:0.4rem;"></i> Continue Shopping
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

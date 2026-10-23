@@ -416,11 +416,12 @@ def get_sales():
     return jsonify(sales_linked_list.to_list())
 
 @app.route('/api/sales', methods=['POST'])
-@admin_required
 def record_sale():
-    data = request.json
-    customer_name = data.get('customer_name', 'Walk-in Customer')
+    data = request.json or {}
+    customer_name = (data.get('customer_name') or '').strip() or session.get('user_name') or 'Customer'
     items = data.get('items', [])
+    if not items and data.get('product_id'):
+        items = [{'product_id': int(data['product_id']), 'quantity': int(data.get('quantity', 1))}]
     tax_rate = float(data.get('tax_rate', 0.18))
     discount = float(data.get('discount', 0.0))
 
@@ -438,7 +439,8 @@ def record_sale():
         prod = next((p for p in product_array.to_list() if p['id'] == prod_id), None)
         if not prod or prod['stock'] < qty:
             conn.close()
-            return jsonify({'error': f'Insufficient stock for product ID {prod_id}'}), 400
+            item_name = prod['name'] if prod else f'product ID {prod_id}'
+            return jsonify({'error': f'Insufficient stock for {item_name}'}), 400
 
         processed_items.append({
             'product_id': prod_id,
@@ -453,7 +455,8 @@ def record_sale():
 
     from datetime import datetime
     date_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    cursor.execute('INSERT INTO sales (customer_id, total, date) VALUES (?, ?, ?)', (1, total_amount, date_str))
+    user_id = session.get('user_id', 1)
+    cursor.execute('INSERT INTO sales (customer_id, total, date) VALUES (?, ?, ?)', (user_id, total_amount, date_str))
     sale_id = cursor.lastrowid
 
     for pit in processed_items:
@@ -462,7 +465,9 @@ def record_sale():
             (sale_id, pit['product_id'], pit['quantity'], pit['price'])
         )
         cursor.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (pit['quantity'], pit['product_id']))
-        product_array.update(pit['product_id'], {'stock': pit['stock'] - pit['quantity'] if 'stock' in pit else prod['stock'] - pit['quantity']})
+        prod_match = next((p for p in product_array.to_list() if p['id'] == pit['product_id']), None)
+        if prod_match:
+            product_array.update(pit['product_id'], {'stock': max(0, prod_match['stock'] - pit['quantity'])})
 
     conn.commit()
     conn.close()
