@@ -5,6 +5,7 @@
 
 let allProducts = [];
 let filteredProducts = [];
+let cart = []; // Shopping cart items
 
 // Category icons mapping
 const CAT_ICONS = {
@@ -43,7 +44,7 @@ function renderProducts(products) {
   }
 
   grid.innerHTML = products.map((p, i) => `
-    <div class="product-card reveal-scale" style="transition-delay:${Math.min(i * 0.05, 0.4)}s;">
+    <div class="product-card reveal-scale" style="transition-delay:${Math.min(i * 0.05, 0.4)}s;cursor:pointer;" onclick="openProductDetail(${p.id})">
       <div class="product-img-wrap">
         <i class="fa-solid ${getCatIcon(p.category)} product-category-icon"></i>
         ${p.stock === 0 ? '<span class="product-badge tag tag-red">Sold Out</span>' : ''}
@@ -57,9 +58,15 @@ function renderProducts(products) {
       </div>
       <div class="product-footer">
         <span class="tag tag-gray" style="font-size:0.72rem;">${escapeHtml(p.category)}</span>
-        <button onclick="deleteProduct(${p.id})" class="btn btn-ghost btn-sm btn-delete-product" style="color:#dc2626;border-color:#fecaca;">
-          <i class="fa-solid fa-trash"></i>
-        </button>
+        <div style="display:flex;gap:0.4rem;align-items:center;">
+          <button onclick="event.stopPropagation();addToCart(${p.id})" class="btn btn-primary btn-sm btn-buy-product" title="Add to Cart"
+            ${p.stock === 0 ? 'disabled style="opacity:0.45;cursor:not-allowed;"' : ''}>
+            <i class="fa-solid fa-cart-plus"></i>
+          </button>
+          <button onclick="event.stopPropagation();deleteProduct(${p.id})" class="btn btn-ghost btn-sm btn-delete-product" style="color:#dc2626;border-color:#fecaca;">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
       </div>
     </div>
   `).join('');
@@ -130,7 +137,7 @@ function clearFilters() {
   renderProducts(filteredProducts);
 }
 
-// Modal open/close
+// ─── Add Product Modal ───
 function openModal() {
   const overlay = document.getElementById('modal-overlay');
   if (overlay) { overlay.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
@@ -148,6 +155,372 @@ async function deleteProduct(id) {
     loadProducts();
   } catch (e) {
     showToast('Could not remove product', 'error');
+  }
+}
+
+// ─── Product Detail / Purchase Modal ───
+function openProductDetail(id) {
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
+
+  const existing = document.getElementById('product-detail-overlay');
+  if (existing) existing.remove();
+
+  const inCart = cart.filter(c => c.id === id).reduce((s, c) => s + c.qty, 0);
+  const overlay = document.createElement('div');
+  overlay.id = 'product-detail-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);z-index:3000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  overlay.onclick = (e) => { if (e.target === overlay) closeProductDetail(); };
+
+  const availableStock = p.stock - inCart;
+  const icon = CAT_ICONS[p.category] || 'fa-box';
+
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;box-shadow:0 25px 60px rgba(0,0,0,0.3);overflow:hidden;animation:slideUp 0.3s ease;">
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:1.5rem;position:relative;">
+        <button onclick="closeProductDetail()" style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,0.1);border:none;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div style="display:flex;align-items:center;gap:1rem;">
+          <div style="width:60px;height:60px;background:rgba(230,57,70,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid ${icon}" style="font-size:1.6rem;color:#e63946;"></i>
+          </div>
+          <div>
+            <div style="font-size:0.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">${escapeHtml(p.brand)} · ${escapeHtml(p.category)}</div>
+            <h3 style="color:#fff;font-size:1.1rem;font-weight:700;margin:0.2rem 0 0;">${escapeHtml(p.name)}</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:1.5rem;">
+        <!-- Price & Stock -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+          <div style="font-size:1.75rem;font-weight:800;color:#e63946;">${formatCurrency(p.price)}</div>
+          <div>${getStockBadge(p.stock)}</div>
+        </div>
+
+        <!-- Info rows -->
+        <div style="background:#f8fafc;border-radius:10px;padding:1rem;margin-bottom:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div><div style="font-size:0.72rem;color:#94a3b8;text-transform:uppercase;">Brand</div><div style="font-weight:600;color:#1e293b;">${escapeHtml(p.brand)}</div></div>
+          <div><div style="font-size:0.72rem;color:#94a3b8;text-transform:uppercase;">Category</div><div style="font-weight:600;color:#1e293b;">${escapeHtml(p.category)}</div></div>
+          <div><div style="font-size:0.72rem;color:#94a3b8;text-transform:uppercase;">Product ID</div><div style="font-weight:600;color:#1e293b;">#${p.id}</div></div>
+          <div><div style="font-size:0.72rem;color:#94a3b8;text-transform:uppercase;">In Stock</div><div style="font-weight:600;color:${p.stock > 5 ? '#16a34a' : p.stock > 0 ? '#ea580c' : '#dc2626'};">${p.stock} units</div></div>
+        </div>
+
+        <!-- Quantity selector -->
+        ${p.stock > 0 ? `
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem;">
+          <label style="font-size:0.85rem;font-weight:600;color:#475569;flex-shrink:0;">Quantity:</label>
+          <div style="display:flex;align-items:center;border:2px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+            <button onclick="changeDetailQty(-1)" style="background:#f1f5f9;border:none;padding:0.5rem 0.75rem;cursor:pointer;font-size:1rem;color:#475569;">−</button>
+            <input id="detail-qty" type="number" value="1" min="1" max="${availableStock}" style="width:52px;text-align:center;border:none;outline:none;font-size:1rem;font-weight:700;padding:0.5rem 0;">
+            <button onclick="changeDetailQty(1)" style="background:#f1f5f9;border:none;padding:0.5rem 0.75rem;cursor:pointer;font-size:1rem;color:#475569;">+</button>
+          </div>
+          <span style="font-size:0.78rem;color:#94a3b8;">(max ${availableStock})</span>
+        </div>
+        ` : ''}
+
+        <!-- Cart summary if already in cart -->
+        ${inCart > 0 ? `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:0.6rem 0.9rem;margin-bottom:1rem;font-size:0.83rem;color:#1d4ed8;"><i class="fa-solid fa-cart-shopping" style="margin-right:0.4rem;"></i>${inCart} already in your cart</div>` : ''}
+
+        <!-- Action Buttons -->
+        <div style="display:flex;gap:0.75rem;">
+          <button onclick="addToCartFromDetail(${p.id})" class="btn btn-primary" style="flex:1;" ${p.stock === 0 ? 'disabled style="opacity:0.45;cursor:not-allowed;flex:1;"' : ''}>
+            <i class="fa-solid fa-cart-plus"></i> Add to Cart
+          </button>
+          <button onclick="buyNow(${p.id})" class="btn btn-navy" style="flex:1;" ${p.stock === 0 ? 'disabled style="opacity:0.45;cursor:not-allowed;flex:1;"' : ''}>
+            <i class="fa-solid fa-bolt"></i> Buy Now
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+}
+
+function closeProductDetail() {
+  const overlay = document.getElementById('product-detail-overlay');
+  if (overlay) overlay.remove();
+  document.body.style.overflow = '';
+}
+
+function changeDetailQty(delta) {
+  const input = document.getElementById('detail-qty');
+  if (!input) return;
+  const max = parseInt(input.max) || 99;
+  let val = parseInt(input.value) + delta;
+  val = Math.max(1, Math.min(max, val));
+  input.value = val;
+}
+
+// ─── Cart Functions ───
+function addToCart(productId) {
+  const p = allProducts.find(x => x.id === productId);
+  if (!p || p.stock === 0) { showToast('This item is out of stock', 'error'); return; }
+  const existing = cart.find(c => c.id === productId);
+  const inCartQty = existing ? existing.qty : 0;
+  if (inCartQty >= p.stock) { showToast('No more stock available', 'error'); return; }
+  if (existing) {
+    existing.qty++;
+  } else {
+    cart.push({ id: p.id, name: p.name, brand: p.brand, price: p.price, qty: 1, stock: p.stock });
+  }
+  updateCartBadge();
+  showToast(`${p.name} added to cart!`, 'success');
+}
+
+function addToCartFromDetail(productId) {
+  const p = allProducts.find(x => x.id === productId);
+  if (!p || p.stock === 0) return;
+  const qtyInput = document.getElementById('detail-qty');
+  const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+  const existing = cart.find(c => c.id === productId);
+  const inCartQty = existing ? existing.qty : 0;
+  const canAdd = Math.min(qty, p.stock - inCartQty);
+  if (canAdd <= 0) { showToast('No more stock available', 'error'); return; }
+  if (existing) {
+    existing.qty += canAdd;
+  } else {
+    cart.push({ id: p.id, name: p.name, brand: p.brand, price: p.price, qty: canAdd, stock: p.stock });
+  }
+  updateCartBadge();
+  showToast(`${canAdd}x ${p.name} added to cart!`, 'success');
+  closeProductDetail();
+  openCartDrawer();
+}
+
+function buyNow(productId) {
+  const p = allProducts.find(x => x.id === productId);
+  if (!p || p.stock === 0) return;
+  const qtyInput = document.getElementById('detail-qty');
+  const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+  // Clear cart and add only this item
+  cart = [{ id: p.id, name: p.name, brand: p.brand, price: p.price, qty: Math.min(qty, p.stock), stock: p.stock }];
+  updateCartBadge();
+  closeProductDetail();
+  openCartDrawer();
+}
+
+function updateCartBadge() {
+  const total = cart.reduce((s, c) => s + c.qty, 0);
+  let badge = document.getElementById('cart-badge');
+  let btn = document.getElementById('cart-btn');
+  if (!btn) return;
+  if (badge) badge.textContent = total;
+  btn.style.display = total > 0 ? 'flex' : 'none';
+}
+
+// ─── Cart Drawer ───
+function openCartDrawer() {
+  let drawer = document.getElementById('cart-drawer');
+  if (!drawer) {
+    drawer = buildCartDrawer();
+    document.body.appendChild(drawer);
+  }
+  renderCartDrawer();
+  drawer.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCartDrawer() {
+  const drawer = document.getElementById('cart-drawer');
+  if (drawer) drawer.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function buildCartDrawer() {
+  const drawer = document.createElement('div');
+  drawer.id = 'cart-drawer';
+  drawer.style.cssText = `
+    position:fixed;top:0;right:0;height:100vh;width:100%;max-width:420px;
+    background:#fff;z-index:4000;box-shadow:-8px 0 40px rgba(0,0,0,0.2);
+    transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);
+    display:flex;flex-direction:column;
+  `;
+  // backdrop
+  const back = document.createElement('div');
+  back.id = 'cart-backdrop';
+  back.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3999;display:none;';
+  back.onclick = closeCartDrawer;
+  document.body.appendChild(back);
+
+  // inject open style
+  const style = document.createElement('style');
+  style.textContent = '#cart-drawer.open{transform:translateX(0)!important;} #cart-drawer.open ~ * #cart-backdrop, #cart-backdrop{display:block;}';
+  document.head.appendChild(style);
+
+  drawer.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid #e2e8f0;background:#1a1a2e;">
+      <div style="display:flex;align-items:center;gap:0.6rem;">
+        <i class="fa-solid fa-cart-shopping" style="color:#e63946;font-size:1.1rem;"></i>
+        <span style="font-weight:700;font-size:1rem;color:#fff;">Your Cart</span>
+        <span id="cart-item-count" style="background:#e63946;color:#fff;border-radius:99px;font-size:0.72rem;font-weight:700;padding:2px 8px;">0</span>
+      </div>
+      <button onclick="closeCartDrawer()" style="background:rgba(255,255,255,0.1);border:none;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div id="cart-items" style="flex:1;overflow-y:auto;padding:1rem 1.5rem;"></div>
+    <div id="cart-footer" style="border-top:1px solid #e2e8f0;padding:1.25rem 1.5rem;background:#f8fafc;"></div>
+  `;
+  return drawer;
+}
+
+function renderCartDrawer() {
+  const itemsEl = document.getElementById('cart-items');
+  const footerEl = document.getElementById('cart-footer');
+  const countEl = document.getElementById('cart-item-count');
+  const back = document.getElementById('cart-backdrop');
+  if (back) back.style.display = 'block';
+
+  const totalItems = cart.reduce((s, c) => s + c.qty, 0);
+  const totalPrice = cart.reduce((s, c) => s + (c.price * c.qty), 0);
+  if (countEl) countEl.textContent = totalItems;
+
+  if (!itemsEl) return;
+
+  if (cart.length === 0) {
+    itemsEl.innerHTML = `
+      <div style="text-align:center;padding:3rem 1rem;color:#94a3b8;">
+        <i class="fa-solid fa-cart-shopping" style="font-size:3rem;opacity:0.3;display:block;margin-bottom:1rem;"></i>
+        <p style="font-weight:600;">Your cart is empty</p>
+        <p style="font-size:0.85rem;">Click on any product to add it</p>
+      </div>`;
+    if (footerEl) footerEl.innerHTML = '';
+    return;
+  }
+
+  itemsEl.innerHTML = cart.map((item, idx) => `
+    <div style="display:flex;align-items:center;gap:0.75rem;padding:0.9rem 0;border-bottom:1px solid #f1f5f9;">
+      <div style="width:44px;height:44px;background:#f1f5f9;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="fa-solid ${CAT_ICONS[allProducts.find(p=>p.id===item.id)?.category]||'fa-box'}" style="color:#e63946;"></i>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:0.85rem;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(item.name)}</div>
+        <div style="font-size:0.78rem;color:#64748b;">${escapeHtml(item.brand)} · ${formatCurrency(item.price)} each</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.3rem;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+        <button onclick="updateCartQty(${idx}, -1)" style="background:#f8fafc;border:none;padding:0.3rem 0.55rem;cursor:pointer;font-size:0.9rem;color:#475569;">−</button>
+        <span style="font-size:0.9rem;font-weight:700;padding:0 0.4rem;min-width:20px;text-align:center;">${item.qty}</span>
+        <button onclick="updateCartQty(${idx}, 1)" style="background:#f8fafc;border:none;padding:0.3rem 0.55rem;cursor:pointer;font-size:0.9rem;color:#475569;">+</button>
+      </div>
+      <div style="font-weight:700;color:#1e293b;font-size:0.88rem;min-width:70px;text-align:right;">${formatCurrency(item.price * item.qty)}</div>
+      <button onclick="removeFromCart(${idx})" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:0.85rem;padding:0.25rem;">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </div>
+  `).join('');
+
+  if (footerEl) {
+    footerEl.innerHTML = `
+      <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;font-size:0.85rem;color:#64748b;">
+        <span>${totalItems} item${totalItems !== 1 ? 's' : ''}</span>
+        <span>Subtotal: <strong style="color:#1e293b;">${formatCurrency(totalPrice)}</strong></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:1rem;font-size:0.78rem;color:#94a3b8;">
+        <span>GST (18%)</span><span>${formatCurrency(totalPrice * 0.18)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:1.25rem;font-size:1.05rem;font-weight:800;color:#1e293b;border-top:2px solid #e2e8f0;padding-top:0.75rem;">
+        <span>Total</span><span style="color:#e63946;">${formatCurrency(totalPrice * 1.18)}</span>
+      </div>
+      <button onclick="proceedToCheckout()" class="btn btn-primary" style="width:100%;font-size:1rem;padding:0.8rem;">
+        <i class="fa-solid fa-credit-card"></i> Proceed to Checkout
+      </button>
+      <button onclick="cart=[];updateCartBadge();renderCartDrawer();" class="btn btn-ghost btn-sm" style="width:100%;margin-top:0.5rem;color:#94a3b8;">Clear Cart</button>
+    `;
+  }
+}
+
+function updateCartQty(idx, delta) {
+  if (!cart[idx]) return;
+  cart[idx].qty = Math.max(1, Math.min(cart[idx].stock, cart[idx].qty + delta));
+  updateCartBadge();
+  renderCartDrawer();
+}
+
+function removeFromCart(idx) {
+  cart.splice(idx, 1);
+  updateCartBadge();
+  renderCartDrawer();
+}
+
+async function proceedToCheckout() {
+  if (cart.length === 0) return;
+
+  // Show checkout confirmation modal
+  const existing = document.getElementById('checkout-modal');
+  if (existing) existing.remove();
+
+  const totalPrice = cart.reduce((s, c) => s + (c.price * c.qty), 0);
+  const totalWithTax = totalPrice * 1.18;
+
+  const modal = document.createElement('div');
+  modal.id = 'checkout-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:5000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:440px;overflow:hidden;animation:slideUp 0.3s ease;">
+      <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:1.25rem 1.5rem;">
+        <h3 style="color:#fff;margin:0;font-size:1.1rem;"><i class="fa-solid fa-receipt" style="margin-right:0.5rem;"></i>Order Summary</h3>
+      </div>
+      <div style="padding:1.5rem;">
+        <div style="max-height:200px;overflow-y:auto;margin-bottom:1rem;">
+          ${cart.map(c => `
+            <div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid #f1f5f9;font-size:0.85rem;">
+              <span style="color:#475569;">${escapeHtml(c.name)} × ${c.qty}</span>
+              <span style="font-weight:600;">${formatCurrency(c.price * c.qty)}</span>
+            </div>
+          `).join('')}
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:#64748b;margin-bottom:0.35rem;"><span>Subtotal</span><span>${formatCurrency(totalPrice)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:#64748b;margin-bottom:0.75rem;"><span>GST (18%)</span><span>${formatCurrency(totalPrice * 0.18)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:1.1rem;font-weight:800;color:#16a34a;border-top:2px solid #e2e8f0;padding-top:0.75rem;margin-bottom:1.25rem;"><span>Total Payable</span><span>${formatCurrency(totalWithTax)}</span></div>
+        <div style="margin-bottom:1rem;">
+          <label style="font-size:0.83rem;font-weight:600;color:#475569;display:block;margin-bottom:0.4rem;">Customer Name</label>
+          <input id="checkout-customer" type="text" class="form-control" placeholder="Enter customer name" style="width:100%;" />
+        </div>
+        <div style="display:flex;gap:0.75rem;">
+          <button onclick="document.getElementById('checkout-modal').remove()" class="btn btn-ghost" style="flex:1;">Cancel</button>
+          <button onclick="confirmPurchase()" class="btn btn-primary" style="flex:1;background:#16a34a;border-color:#16a34a;">
+            <i class="fa-solid fa-check"></i> Confirm Order
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+async function confirmPurchase() {
+  const customerName = (document.getElementById('checkout-customer')?.value || '').trim() || 'Walk-in Customer';
+  const btn = document.querySelector('#checkout-modal button[onclick="confirmPurchase()"]');
+  if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'; btn.disabled = true; }
+
+  try {
+    // Record each cart item as a sale via the existing API
+    for (const item of cart) {
+      await apiCall('/api/sales', 'POST', {
+        product_id: item.id,
+        quantity: item.qty,
+        customer_name: customerName
+      });
+    }
+
+    // Success
+    document.getElementById('checkout-modal')?.remove();
+    closeCartDrawer();
+    cart = [];
+    updateCartBadge();
+    showToast('Order placed successfully! Thank you.', 'success');
+    loadProducts(); // Refresh stock
+  } catch (e) {
+    showToast('Order failed: ' + e.message, 'error');
+    if (btn) { btn.innerHTML = '<i class="fa-solid fa-check"></i> Confirm Order'; btn.disabled = false; }
   }
 }
 
