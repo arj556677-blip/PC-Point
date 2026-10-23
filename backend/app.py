@@ -1,8 +1,10 @@
 import os
 import sys
 import time
+import uuid
 from datetime import timedelta
 from functools import wraps
+from threading import Lock
 from flask import Flask, jsonify, request, send_from_directory, session, redirect, url_for
 
 # Add backend directory to path
@@ -71,6 +73,33 @@ product_array = ProductArray()
 sales_linked_list = SalesLinkedList()
 customer_queue = CustomerQueue()
 component_graph = ComponentGraph()
+
+# Active Checkout Stock Allocations & Reservation Engine
+active_reservations = {}
+reservation_lock = Lock()
+CHECKOUT_RESERVATION_TTL = 600  # 10 minutes temporary allocation hold
+
+def cleanup_expired_reservations():
+    """Prunes expired checkout allocations to restore unreserved stock."""
+    now = time.time()
+    with reservation_lock:
+        expired = [k for k, r in active_reservations.items() if r.get('expires_at', 0) <= now]
+        for k in expired:
+            del active_reservations[k]
+
+def get_reserved_quantity_map():
+    """Computes total active reserved units for each product."""
+    cleanup_expired_reservations()
+    now = time.time()
+    reserved_map = {}
+    with reservation_lock:
+        for r in active_reservations.values():
+            if r.get('expires_at', 0) > now:
+                for it in r.get('items', []):
+                    pid = it['product_id']
+                    reserved_map[pid] = reserved_map.get(pid, 0) + it['quantity']
+    return reserved_map
+
 
 # ==========================================
 # AUTH DECORATORS
@@ -188,14 +217,6 @@ def serve_frontend_files(filename):
         resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         return resp
     return jsonify({'error': 'File not found'}), 404
-
-@app.after_request
-def apply_no_cache_headers(response):
-    """Ensures browsers always fetch fresh assets and verified auth session state."""
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
 
 # ==========================================
 # AUTH API ENDPOINTS
@@ -345,7 +366,85 @@ def get_stats():
 # --- 2. Products API (Array) ---
 @app.route('/api/products', methods=['GET'])
 def get_products():
-    return jsonify(product_array.to_list())
+    reserved_map = get_reserved_quantity_map()
+    products = product_array.to_list()
+    if not reserved_map:
+        return jsonify(products)
+
+    available_products = []
+    for p in products:
+        p_copy = dict(p)
+        reserved_qty = reserved_map.get(p['id'], 0)
+        p_copy['actual_stock'] = p['stock']
+        p_copy['reserved_stock'] = reserved_qty
+        p_copy['stock'] = max(0, p['stock'] - reserved_qty)
+        available_products.append(p_copy)
+    return jsonify(available_products)
+
+# --- Active Checkout Inventory Reservation Endpoints ---
+@app.route('/api/checkout/reserve', methods=['POST'])
+@login_required
+def reserve_checkout_stock():
+    """Temporarily reserves inventory for an active customer checkout session."""
+    data = request.json or {}
+    items = data.get('items', [])
+    if not items:
+        return jsonify({'error': 'No items specified for reservation'}), 400
+
+    cleanup_expired_reservations()
+    now = time.time()
+
+    with reservation_lock:
+        existing_res_id = data.get('reservation_id')
+        if existing_res_id and existing_res_id in active_reservations:
+            del active_reservations[existing_res_id]
+
+        reserved_map = {}
+        for r in active_reservations.values():
+            if r.get('expires_at', 0) > now:
+                for it in r.get('items', []):
+                    pid = it['product_id']
+                    reserved_map[pid] = reserved_map.get(pid, 0) + it['quantity']
+
+        for it in items:
+            prod_id = it['product_id']
+            qty = it['quantity']
+            prod = next((p for p in product_array.to_list() if p['id'] == prod_id), None)
+            if not prod:
+                return jsonify({'error': f'Product #{prod_id} not found.'}), 404
+
+            currently_reserved = reserved_map.get(prod_id, 0)
+            available = prod['stock'] - currently_reserved
+            if available < qty:
+                return jsonify({
+                    'error': f"'{prod['name']}' is currently reserved by another customer or out of stock.",
+                    'available_stock': max(0, available),
+                    'requested_stock': qty
+                }), 409
+
+        res_id = str(uuid.uuid4())
+        active_reservations[res_id] = {
+            'user_id': session.get('user_id'),
+            'items': items,
+            'created_at': now,
+            'expires_at': now + CHECKOUT_RESERVATION_TTL
+        }
+
+    return jsonify({
+        'message': 'Stock reserved for checkout',
+        'reservation_id': res_id,
+        'expires_in': CHECKOUT_RESERVATION_TTL
+    }), 200
+
+@app.route('/api/checkout/release', methods=['POST'])
+def release_checkout_stock():
+    """Releases temporary inventory reservation when checkout modal is closed or cancelled."""
+    data = request.json or {}
+    res_id = data.get('reservation_id')
+    if res_id:
+        with reservation_lock:
+            active_reservations.pop(res_id, None)
+    return jsonify({'message': 'Stock reservation released successfully.'})
 
 @app.route('/api/products', methods=['POST'])
 @admin_required
@@ -437,6 +536,7 @@ def record_sale():
     data = request.json or {}
     customer_name = (data.get('customer_name') or '').strip() or session.get('user_name') or 'Customer'
     items = data.get('items', [])
+    res_id = data.get('reservation_id')
     if not items and data.get('product_id'):
         items = [{'product_id': int(data['product_id']), 'quantity': int(data.get('quantity', 1))}]
     tax_rate = float(data.get('tax_rate', 0.18))
@@ -448,46 +548,51 @@ def record_sale():
     conn = get_db()
     cursor = conn.cursor()
 
-    processed_items = []
+    cleanup_expired_reservations()
+    with reservation_lock:
+        if res_id and res_id in active_reservations:
+            del active_reservations[res_id]
 
-    for item in items:
-        prod_id = item['product_id']
-        qty = item['quantity']
-        prod = next((p for p in product_array.to_list() if p['id'] == prod_id), None)
-        if not prod or prod['stock'] < qty:
-            conn.close()
-            item_name = prod['name'] if prod else f'product ID {prod_id}'
-            return jsonify({'error': f'Insufficient stock for {item_name}'}), 400
+        processed_items = []
 
-        processed_items.append({
-            'product_id': prod_id,
-            'product_name': prod['name'],
-            'quantity': qty,
-            'price': prod['price']
-        })
+        for item in items:
+            prod_id = item['product_id']
+            qty = item['quantity']
+            row = conn.execute('SELECT * FROM products WHERE id = ?', (prod_id,)).fetchone()
+            if not row or row['stock'] < qty:
+                conn.close()
+                item_name = row['name'] if row else f'product ID {prod_id}'
+                return jsonify({'error': f'Insufficient stock for {item_name}'}), 400
 
-    # Evaluate total using Itemized Billing Engine
-    billing_eval = evaluate_billing_expression(processed_items, tax_rate=tax_rate, discount=discount)
-    total_amount = billing_eval['final_total']
+            processed_items.append({
+                'product_id': prod_id,
+                'product_name': row['name'],
+                'quantity': qty,
+                'price': row['price']
+            })
 
-    from datetime import datetime
-    date_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    user_id = session.get('user_id', 1)
-    cursor.execute('INSERT INTO sales (customer_id, total, date) VALUES (?, ?, ?)', (user_id, total_amount, date_str))
-    sale_id = cursor.lastrowid
+        # Evaluate total using Itemized Billing Engine
+        billing_eval = evaluate_billing_expression(processed_items, tax_rate=tax_rate, discount=discount)
+        total_amount = billing_eval['final_total']
 
-    for pit in processed_items:
-        cursor.execute(
-            'INSERT INTO sale_items (sale_id, product_id, quantity, price) VALUES (?, ?, ?, ?)',
-            (sale_id, pit['product_id'], pit['quantity'], pit['price'])
-        )
-        cursor.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (pit['quantity'], pit['product_id']))
-        prod_match = next((p for p in product_array.to_list() if p['id'] == pit['product_id']), None)
-        if prod_match:
-            product_array.update(pit['product_id'], {'stock': max(0, prod_match['stock'] - pit['quantity'])})
+        from datetime import datetime
+        date_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        user_id = session.get('user_id', 1)
+        cursor.execute('INSERT INTO sales (customer_id, total, date) VALUES (?, ?, ?)', (user_id, total_amount, date_str))
+        sale_id = cursor.lastrowid
 
-    conn.commit()
-    conn.close()
+        for pit in processed_items:
+            cursor.execute(
+                'INSERT INTO sale_items (sale_id, product_id, quantity, price) VALUES (?, ?, ?, ?)',
+                (sale_id, pit['product_id'], pit['quantity'], pit['price'])
+            )
+            cursor.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (pit['quantity'], pit['product_id']))
+            prod_match = next((p for p in product_array.to_list() if p['id'] == pit['product_id']), None)
+            if prod_match:
+                product_array.update(pit['product_id'], {'stock': max(0, prod_match['stock'] - pit['quantity'])})
+
+        conn.commit()
+        conn.close()
 
     sale_record = {
         'id': sale_id,
@@ -507,6 +612,7 @@ def record_sale():
 
 # --- 5. Customer Service Desk API ---
 @app.route('/api/queue', methods=['GET'])
+@admin_required
 def get_queue():
     return jsonify({
         'queue': customer_queue.to_list(),
@@ -577,6 +683,7 @@ def recommend_accessories():
     return jsonify(result)
 
 @app.route('/api/admin/generate-pdf', methods=['GET', 'POST'])
+@admin_required
 def trigger_generate_pdf():
     """Generates and updates DSA.pdf using backend process."""
     try:

@@ -16,7 +16,10 @@ async function loadQueueData() {
     renderQueueStrip(currentQueue);
     updateFrontCustomerCard(currentQueue);
   } catch (err) {
-    showToast('Failed to load support ticket queue', 'error');
+    const strip = document.getElementById('queue-visualizer-strip');
+    if (strip) {
+      strip.innerHTML = `<div style="color: var(--text-muted); text-align: center; width: 100%; padding: 1.5rem;"><i class="fa-solid fa-lock" style="margin-right: 0.5rem; color: var(--accent-red);"></i>Admin authentication required to view customer service queue.</div>`;
+    }
   }
 }
 

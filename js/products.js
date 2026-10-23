@@ -5,7 +5,35 @@
 
 let allProducts = [];
 let filteredProducts = [];
-let cart = []; // Shopping cart items
+
+// Persistent Shopping Cart Storage
+const CART_STORAGE_KEY = 'pc_point_cart_items';
+
+function getStoredCart() {
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {}
+  return [];
+}
+
+function persistCart(items) {
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  } catch (e) {}
+}
+
+function clearStoredCart() {
+  try {
+    localStorage.removeItem(CART_STORAGE_KEY);
+  } catch (e) {}
+}
+
+let cart = getStoredCart(); // Shopping cart items loaded from persistent storage
+let currentReservationId = null;
 
 // Category icons mapping
 const CAT_ICONS = {
@@ -269,6 +297,7 @@ function addToCart(productId) {
   } else {
     cart.push({ id: p.id, name: p.name, brand: p.brand, price: p.price, qty: 1, stock: p.stock });
   }
+  persistCart(cart);
   updateCartBadge();
   showToast(`${p.name} added to cart!`, 'success');
 }
@@ -287,6 +316,7 @@ function addToCartFromDetail(productId) {
   } else {
     cart.push({ id: p.id, name: p.name, brand: p.brand, price: p.price, qty: canAdd, stock: p.stock });
   }
+  persistCart(cart);
   updateCartBadge();
   showToast(`${canAdd}x ${p.name} added to cart!`, 'success');
   closeProductDetail();
@@ -333,8 +363,9 @@ async function buyNow(productId) {
   if (!p || p.stock === 0) return;
   const qtyInput = document.getElementById('detail-qty');
   const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
-  // Set cart to only this item
+  // Set cart to only this item and persist
   cart = [{ id: p.id, name: p.name, brand: p.brand, price: p.price, qty: Math.min(qty, p.stock), stock: p.stock }];
+  persistCart(cart);
   updateCartBadge();
   closeProductDetail();
   
@@ -471,7 +502,7 @@ function renderCartDrawer() {
       <button onclick="proceedToCheckout()" class="btn btn-primary" style="width:100%;font-size:1rem;padding:0.8rem;">
         <i class="fa-solid fa-credit-card"></i> Proceed to Checkout
       </button>
-      <button onclick="cart=[];updateCartBadge();renderCartDrawer();" class="btn btn-ghost btn-sm" style="width:100%;margin-top:0.5rem;color:#94a3b8;">Clear Cart</button>
+      <button onclick="cart=[];clearStoredCart();updateCartBadge();renderCartDrawer();" class="btn btn-ghost btn-sm" style="width:100%;margin-top:0.5rem;color:#94a3b8;">Clear Cart</button>
     `;
   }
 }
@@ -479,14 +510,28 @@ function renderCartDrawer() {
 function updateCartQty(idx, delta) {
   if (!cart[idx]) return;
   cart[idx].qty = Math.max(1, Math.min(cart[idx].stock, cart[idx].qty + delta));
+  persistCart(cart);
   updateCartBadge();
   renderCartDrawer();
 }
 
 function removeFromCart(idx) {
   cart.splice(idx, 1);
+  persistCart(cart);
   updateCartBadge();
   renderCartDrawer();
+}
+
+async function cancelCheckout() {
+  const existing = document.getElementById('checkout-modal');
+  if (existing) existing.remove();
+  if (currentReservationId) {
+    try {
+      await apiCall('/api/checkout/release', 'POST', { reservation_id: currentReservationId });
+    } catch (_) {}
+    currentReservationId = null;
+    loadProducts();
+  }
 }
 
 async function proceedToCheckout() {
@@ -496,6 +541,19 @@ async function proceedToCheckout() {
   const authUser = await checkUserAuth();
   if (!authUser || !authUser.authenticated) {
     showAuthPromptModal();
+    return;
+  }
+
+  // Reserve stock for active checkout session to prevent concurrent checkout conflicts
+  try {
+    const resv = await apiCall('/api/checkout/reserve', 'POST', {
+      items: cart.map(c => ({ product_id: c.id, quantity: c.qty })),
+      reservation_id: currentReservationId
+    });
+    currentReservationId = resv.reservation_id;
+  } catch (err) {
+    showToast(err.message || 'Unable to reserve stock for checkout.', 'error');
+    loadProducts();
     return;
   }
 
@@ -509,11 +567,13 @@ async function proceedToCheckout() {
   const modal = document.createElement('div');
   modal.id = 'checkout-modal';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:5000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  modal.onclick = (e) => { if (e.target === modal) cancelCheckout(); };
 
   modal.innerHTML = `
     <div style="background:#fff;border-radius:16px;width:100%;max-width:440px;overflow:hidden;animation:slideUp 0.3s ease;">
-      <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:1.25rem 1.5rem;">
+      <div style="background:linear-gradient(135deg,#16a34a,#15803d);padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;">
         <h3 style="color:#fff;margin:0;font-size:1.1rem;"><i class="fa-solid fa-receipt" style="margin-right:0.5rem;"></i>Order Summary</h3>
+        <span style="font-size:0.72rem;background:rgba(255,255,255,0.22);color:#fff;padding:2px 8px;border-radius:99px;font-weight:600;"><i class="fa-solid fa-lock" style="margin-right:3px;"></i>Stock Reserved (10m)</span>
       </div>
       <div style="padding:1.5rem;">
         <div style="max-height:200px;overflow-y:auto;margin-bottom:1rem;">
@@ -532,7 +592,7 @@ async function proceedToCheckout() {
           <input id="checkout-customer" type="text" class="form-control" placeholder="Enter customer name" value="${escapeHtml(defaultName)}" style="width:100%;" />
         </div>
         <div style="display:flex;gap:0.75rem;">
-          <button onclick="document.getElementById('checkout-modal').remove()" class="btn btn-ghost" style="flex:1;">Cancel</button>
+          <button onclick="cancelCheckout()" class="btn btn-ghost" style="flex:1;">Cancel</button>
           <button onclick="confirmPurchase()" class="btn btn-primary" style="flex:1;background:#16a34a;border-color:#16a34a;">
             <i class="fa-solid fa-check"></i> Confirm Order
           </button>
@@ -565,14 +625,17 @@ async function confirmPurchase() {
     const res = await apiCall('/api/sales', 'POST', {
       customer_name: customerName,
       items: itemsPayload,
+      reservation_id: currentReservationId,
       tax_rate: 0.18,
       discount: 0.0
     });
 
     // Clean up checkout modal and cart
+    currentReservationId = null;
     document.getElementById('checkout-modal')?.remove();
     closeCartDrawer();
     cart = [];
+    clearStoredCart();
     updateCartBadge();
     loadProducts(); // Refresh stock
 
@@ -604,14 +667,14 @@ function showAuthPromptModal() {
       </div>
       <h3 style="margin:0 0 0.5rem;font-size:1.35rem;color:#0f172a;">Sign In Required to Purchase</h3>
       <p style="color:#64748b;font-size:0.92rem;margin:0 0 1.75rem;line-height:1.5;">
-        Only registered and authorized users can purchase hardware products. Please sign in or create an account to complete your order.
+        Only registered and authorized users can purchase hardware products. Please sign in or create an account to complete your order. Your cart will be saved.
       </p>
 
       <div style="display:flex;flex-direction:column;gap:0.75rem;">
-        <a href="/login.html?redirect=/products.html&auth=customer" class="btn btn-primary" style="padding:0.85rem;font-size:0.98rem;display:flex;align-items:center;justify-content:center;gap:0.6rem;text-decoration:none;border-radius:10px;">
+        <a href="/login.html?redirect=%2Fproducts.html%3FopenCart%3D1&auth=customer" class="btn btn-primary" style="padding:0.85rem;font-size:0.98rem;display:flex;align-items:center;justify-content:center;gap:0.6rem;text-decoration:none;border-radius:10px;">
           <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In to Purchase
         </a>
-        <a href="/login.html?redirect=/products.html&tab=register" class="btn" style="padding:0.85rem;font-size:0.95rem;background:#f8fafc;border:1px solid #cbd5e1;color:#1e293b;display:flex;align-items:center;justify-content:center;gap:0.6rem;text-decoration:none;border-radius:10px;font-weight:600;">
+        <a href="/login.html?redirect=%2Fproducts.html%3FopenCart%3D1&tab=register" class="btn" style="padding:0.85rem;font-size:0.95rem;background:#f8fafc;border:1px solid #cbd5e1;color:#1e293b;display:flex;align-items:center;justify-content:center;gap:0.6rem;text-decoration:none;border-radius:10px;font-weight:600;">
           <i class="fa-solid fa-user-plus"></i> Create Customer Account
         </a>
         <button onclick="document.getElementById('auth-prompt-modal').remove()" style="background:transparent;border:none;color:#94a3b8;font-size:0.88rem;cursor:pointer;margin-top:0.5rem;padding:0.25rem;">
@@ -669,6 +732,11 @@ function showOrderSuccessModal(sale) {
 
 document.addEventListener('DOMContentLoaded', () => {
   loadProducts();
+  updateCartBadge();
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('openCart') === '1' && cart.length > 0) {
+    setTimeout(openCartDrawer, 300);
+  }
 
   // Category filter checkboxes
   document.querySelectorAll('.cat-filter').forEach(cb =>
