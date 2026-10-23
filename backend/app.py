@@ -170,16 +170,32 @@ def serve_logout():
 @app.route('/<path:filename>')
 def serve_frontend_files(filename):
     if filename.endswith('.css'):
-        return send_from_directory(CSS_DIR, os.path.basename(filename))
+        resp = send_from_directory(CSS_DIR, os.path.basename(filename))
+        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return resp
     elif filename.endswith('.js'):
-        return send_from_directory(JS_DIR, os.path.basename(filename))
+        resp = send_from_directory(JS_DIR, os.path.basename(filename))
+        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return resp
     elif filename in ['index.html', 'sales.html']:
         if session.get('role') != 'admin':
             return redirect('/login')
-        return send_from_directory(FRONTEND_DIR, filename)
+        resp = send_from_directory(FRONTEND_DIR, filename)
+        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return resp
     elif os.path.exists(os.path.join(FRONTEND_DIR, filename)):
-        return send_from_directory(FRONTEND_DIR, filename)
+        resp = send_from_directory(FRONTEND_DIR, filename)
+        resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return resp
     return jsonify({'error': 'File not found'}), 404
+
+@app.after_request
+def apply_no_cache_headers(response):
+    """Ensures browsers always fetch fresh assets and verified auth session state."""
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 # ==========================================
 # AUTH API ENDPOINTS

@@ -202,7 +202,8 @@ async function orderCurrentBuild() {
     return;
   }
 
-  if (!window.pcSession?.authenticated) {
+  const authUser = typeof window.getAuthSession === 'function' ? await window.getAuthSession() : window.pcSession;
+  if (!authUser || !authUser.authenticated) {
     showToast('Authorization required. Please sign in to purchase.', 'error');
     setTimeout(() => {
       window.location.href = '/login.html?redirect=/recommendation.html&auth=customer';
@@ -348,7 +349,8 @@ async function orderCustomRig() {
     return;
   }
 
-  if (!window.pcSession?.authenticated) {
+  const authUser = typeof window.getAuthSession === 'function' ? await window.getAuthSession() : window.pcSession;
+  if (!authUser || !authUser.authenticated) {
     showToast('Authorization required. Please sign in to purchase.', 'error');
     setTimeout(() => {
       window.location.href = '/login.html?redirect=/recommendation.html&auth=customer';

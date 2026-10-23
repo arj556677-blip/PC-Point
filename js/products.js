@@ -293,6 +293,41 @@ function addToCartFromDetail(productId) {
   openCartDrawer();
 }
 
+async function checkUserAuth() {
+  if (window.pcSession && window.pcSession.authenticated) return window.pcSession;
+  if (typeof pcSession !== 'undefined' && pcSession?.authenticated) {
+    window.pcSession = pcSession;
+    return pcSession;
+  }
+  if (window.sessionReady) {
+    try { await window.sessionReady; } catch (_) {}
+  } else if (typeof sessionReady !== 'undefined') {
+    try { await sessionReady; } catch (_) {}
+  }
+  if (window.pcSession?.authenticated) return window.pcSession;
+  if (typeof pcSession !== 'undefined' && pcSession?.authenticated) {
+    window.pcSession = pcSession;
+    return pcSession;
+  }
+  // Direct server query to eliminate any race condition or script caching issue
+  try {
+    const res = await fetch('/api/auth/session', {
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+    });
+    const data = await res.json();
+    if (data && data.authenticated) {
+      window.pcSession = data;
+      if (typeof pcSession !== 'undefined') pcSession = data;
+      return data;
+    }
+  } catch (err) {
+    console.warn('Session verification fallback error:', err);
+  }
+  return null;
+}
+
 async function buyNow(productId) {
   const p = allProducts.find(x => x.id === productId);
   if (!p || p.stock === 0) return;
@@ -302,9 +337,9 @@ async function buyNow(productId) {
   cart = [{ id: p.id, name: p.name, brand: p.brand, price: p.price, qty: Math.min(qty, p.stock), stock: p.stock }];
   updateCartBadge();
   closeProductDetail();
-  // Wait for session to be confirmed before checking auth
-  await sessionReady;
-  if (!window.pcSession?.authenticated) {
+  
+  const authUser = await checkUserAuth();
+  if (!authUser || !authUser.authenticated) {
     showAuthPromptModal();
     return;
   }
@@ -457,11 +492,9 @@ function removeFromCart(idx) {
 async function proceedToCheckout() {
   if (cart.length === 0) return;
 
-  // Wait for session to be confirmed before checking auth
-  await sessionReady;
-
   // Authorization check: only authorized users can purchase
-  if (!window.pcSession?.authenticated) {
+  const authUser = await checkUserAuth();
+  if (!authUser || !authUser.authenticated) {
     showAuthPromptModal();
     return;
   }
@@ -471,7 +504,7 @@ async function proceedToCheckout() {
 
   const totalPrice = cart.reduce((s, c) => s + (c.price * c.qty), 0);
   const totalWithTax = totalPrice * 1.18;
-  const defaultName = (window.pcSession?.user?.name) || '';
+  const defaultName = authUser?.user?.name || (window.pcSession?.user?.name) || '';
 
   const modal = document.createElement('div');
   modal.id = 'checkout-modal';
@@ -512,13 +545,14 @@ async function proceedToCheckout() {
 }
 
 async function confirmPurchase() {
-  if (!window.pcSession?.authenticated) {
+  const authUser = await checkUserAuth();
+  if (!authUser || !authUser.authenticated) {
     document.getElementById('checkout-modal')?.remove();
     showAuthPromptModal();
     return;
   }
 
-  const customerName = (document.getElementById('checkout-customer')?.value || '').trim() || (window.pcSession?.user?.name) || 'Customer';
+  const customerName = (document.getElementById('checkout-customer')?.value || '').trim() || authUser?.user?.name || (window.pcSession?.user?.name) || 'Customer';
   const btn = document.querySelector('#checkout-modal button[onclick="confirmPurchase()"]');
   if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'; btn.disabled = true; }
 

@@ -7,9 +7,12 @@
 // GLOBAL SESSION & PRIVACY STATE
 // ============================================================
 let pcSession = { authenticated: false, user: null };
+window.pcSession = pcSession;
+
 let _sessionReadyResolve;
 // Resolves once initSession() has finished — other scripts can await this
 const sessionReady = new Promise(res => { _sessionReadyResolve = res; });
+window.sessionReady = sessionReady;
 
 let idleTimer = null;
 let shieldTimer = null;
@@ -20,7 +23,9 @@ const IDLE_TIMEOUT_MS = 15 * 60 * 1000;      // 15 minutes: Session automaticall
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initSession();
-  _sessionReadyResolve(); // Signal that session is ready
+  if (typeof _sessionReadyResolve === 'function') {
+    _sessionReadyResolve(pcSession);
+  }
   checkPageSecurity();
   initScrollObserver();
   initScrollProgress();
@@ -44,6 +49,7 @@ async function initSession() {
     const data = await res.json();
     if (data.expired) {
       pcSession = { authenticated: false, user: null };
+      window.pcSession = pcSession;
       showToast('Session expired due to inactivity for your privacy.', 'info');
       if (isProtectedPage()) {
         redirectToLogin('timeout=1');
@@ -51,8 +57,10 @@ async function initSession() {
       }
     } else if (data.authenticated) {
       pcSession = data;
+      window.pcSession = data;
     } else {
       pcSession = { authenticated: false, user: null };
+      window.pcSession = pcSession;
       if (isProtectedPage()) {
         redirectToLogin('restricted=1');
         return;
@@ -60,6 +68,7 @@ async function initSession() {
     }
   } catch (e) {
     pcSession = { authenticated: false, user: null };
+    window.pcSession = pcSession;
   }
   updateNavForSession();
   if (pcSession.authenticated) {
@@ -68,6 +77,32 @@ async function initSession() {
     stopIdleMonitoring();
   }
 }
+
+/**
+ * Universal helper to retrieve verified authentication state.
+ */
+window.getAuthSession = async function() {
+  if (window.pcSession?.authenticated) return window.pcSession;
+  if (typeof pcSession !== 'undefined' && pcSession?.authenticated) return pcSession;
+  if (window.sessionReady) {
+    try { await window.sessionReady; } catch (_) {}
+  }
+  if (window.pcSession?.authenticated) return window.pcSession;
+  try {
+    const res = await fetch('/api/auth/session', {
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+    });
+    const data = await res.json();
+    if (data && data.authenticated) {
+      pcSession = data;
+      window.pcSession = data;
+      return data;
+    }
+  } catch (err) {}
+  return { authenticated: false, user: null };
+};
 
 /**
  * Checks if the current page requires admin credentials.
@@ -358,6 +393,7 @@ async function handleLogout(isTimeout = false) {
   }
 
   pcSession = { authenticated: false, user: null };
+  window.pcSession = pcSession;
   stopIdleMonitoring();
 
   try {
