@@ -331,8 +331,9 @@
           password: document.getElementById('cust-password').value
         });
 
+        const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/';
         showToast(`Welcome, ${res.user.name}!`, 'success');
-        setTimeout(() => window.location.replace('/'), 800);
+        setTimeout(() => window.location.replace(redirectUrl), 800);
       } catch (err) {
         btn.innerHTML = origHtml;
         btn.disabled = false;
@@ -354,8 +355,9 @@
           password: document.getElementById('reg-password').value
         });
 
+        const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/';
         showToast(`Account created! Welcome, ${res.user.name}!`, 'success');
-        setTimeout(() => window.location.replace('/'), 800);
+        setTimeout(() => window.location.replace(redirectUrl), 800);
       } catch (err) {
         btn.innerHTML = origHtml;
         btn.disabled = false;
@@ -398,7 +400,24 @@
               </div>
             </div>
           `;
+        } else if (params.get('redirect')) {
+          bannerEl.innerHTML = `
+            <div class="security-alert-banner security-alert-info" style="background:#eff6ff;border-color:#bfdbfe;color:#1e40af;">
+              <i class="fa-solid fa-shield-halved" style="font-size:1.3rem;flex-shrink:0;color:#2563eb;"></i>
+              <div>
+                <strong>Authorization Required</strong>
+                <p style="margin:2px 0 0;font-size:0.8rem;color:#1e3a8a;">Please sign in or register to purchase hardware products.</p>
+              </div>
+            </div>
+          `;
         }
+      }
+
+      // Automatically switch to customer or register tab if requested in query
+      if (params.get('tab') === 'register') {
+        switchTab('register');
+      } else if (params.get('auth') === 'customer' || params.get('redirect')) {
+        switchTab('customer');
       }
 
       // Disallow browser Back button on login page so intruder cannot return to prior pages
@@ -411,7 +430,8 @@
 
       // If already logged in, redirect away from login page
       if (pcSession.authenticated) {
-        const dest = pcSession.user?.role === 'admin' ? '/index.html' : '/';
+        const redirectTarget = params.get('redirect');
+        const dest = redirectTarget || (pcSession.user?.role === 'admin' ? '/index.html' : '/');
         window.location.replace(dest);
       }
     });

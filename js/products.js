@@ -298,11 +298,15 @@ function buyNow(productId) {
   if (!p || p.stock === 0) return;
   const qtyInput = document.getElementById('detail-qty');
   const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
-  // Clear cart and add only this item
+  // Set cart to only this item
   cart = [{ id: p.id, name: p.name, brand: p.brand, price: p.price, qty: Math.min(qty, p.stock), stock: p.stock }];
   updateCartBadge();
   closeProductDetail();
-  openCartDrawer();
+  if (!window.pcSession?.authenticated) {
+    showAuthPromptModal();
+    return;
+  }
+  proceedToCheckout();
 }
 
 function updateCartBadge() {
@@ -451,6 +455,12 @@ function removeFromCart(idx) {
 async function proceedToCheckout() {
   if (cart.length === 0) return;
 
+  // Authorization check: only authorized users can purchase
+  if (!window.pcSession?.authenticated) {
+    showAuthPromptModal();
+    return;
+  }
+
   const existing = document.getElementById('checkout-modal');
   if (existing) existing.remove();
 
@@ -497,6 +507,12 @@ async function proceedToCheckout() {
 }
 
 async function confirmPurchase() {
+  if (!window.pcSession?.authenticated) {
+    document.getElementById('checkout-modal')?.remove();
+    showAuthPromptModal();
+    return;
+  }
+
   const customerName = (document.getElementById('checkout-customer')?.value || '').trim() || (window.pcSession?.user?.name) || 'Customer';
   const btn = document.querySelector('#checkout-modal button[onclick="confirmPurchase()"]');
   if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...'; btn.disabled = true; }
@@ -524,9 +540,49 @@ async function confirmPurchase() {
     // Show nice confirmation modal
     showOrderSuccessModal(res?.sale || { customer_name: customerName });
   } catch (e) {
+    if (e.message && (e.message.toLowerCase().includes('authentication') || e.message.toLowerCase().includes('sign in') || e.message.toLowerCase().includes('permission'))) {
+      document.getElementById('checkout-modal')?.remove();
+      showAuthPromptModal();
+      return;
+    }
     showToast('Order failed: ' + e.message, 'error');
     if (btn) { btn.innerHTML = '<i class="fa-solid fa-check"></i> Confirm Order'; btn.disabled = false; }
   }
+}
+
+function showAuthPromptModal() {
+  const existing = document.getElementById('auth-prompt-modal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'auth-prompt-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:6000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:440px;text-align:center;padding:2.25rem 2rem;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);animation:slideUp 0.3s ease;">
+      <div style="width:72px;height:72px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;box-shadow:0 0 0 8px #fee2e2;">
+        <i class="fa-solid fa-user-shield" style="font-size:2rem;color:#e63946;"></i>
+      </div>
+      <h3 style="margin:0 0 0.5rem;font-size:1.35rem;color:#0f172a;">Sign In Required to Purchase</h3>
+      <p style="color:#64748b;font-size:0.92rem;margin:0 0 1.75rem;line-height:1.5;">
+        Only registered and authorized users can purchase hardware products. Please sign in or create an account to complete your order.
+      </p>
+
+      <div style="display:flex;flex-direction:column;gap:0.75rem;">
+        <a href="/login.html?redirect=/products.html&auth=customer" class="btn btn-primary" style="padding:0.85rem;font-size:0.98rem;display:flex;align-items:center;justify-content:center;gap:0.6rem;text-decoration:none;border-radius:10px;">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In to Purchase
+        </a>
+        <a href="/login.html?redirect=/products.html&tab=register" class="btn" style="padding:0.85rem;font-size:0.95rem;background:#f8fafc;border:1px solid #cbd5e1;color:#1e293b;display:flex;align-items:center;justify-content:center;gap:0.6rem;text-decoration:none;border-radius:10px;font-weight:600;">
+          <i class="fa-solid fa-user-plus"></i> Create Customer Account
+        </a>
+        <button onclick="document.getElementById('auth-prompt-modal').remove()" style="background:transparent;border:none;color:#94a3b8;font-size:0.88rem;cursor:pointer;margin-top:0.5rem;padding:0.25rem;">
+          Continue Browsing
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
 }
 
 function showOrderSuccessModal(sale) {

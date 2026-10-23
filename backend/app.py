@@ -80,7 +80,7 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'user_id' not in session:
-            return jsonify({'error': 'Authentication required. Please sign in.'}), 401
+            return jsonify({'error': 'Authentication required. Please sign in to continue.'}), 401
         return f(*args, **kwargs)
     return decorated
 
@@ -416,6 +416,7 @@ def get_sales():
     return jsonify(sales_linked_list.to_list())
 
 @app.route('/api/sales', methods=['POST'])
+@login_required
 def record_sale():
     data = request.json or {}
     customer_name = (data.get('customer_name') or '').strip() or session.get('user_name') or 'Customer'

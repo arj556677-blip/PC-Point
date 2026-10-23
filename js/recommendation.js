@@ -202,6 +202,14 @@ async function orderCurrentBuild() {
     return;
   }
 
+  if (!window.pcSession?.authenticated) {
+    showToast('Authorization required. Please sign in to purchase.', 'error');
+    setTimeout(() => {
+      window.location.href = '/login.html?redirect=/recommendation.html&auth=customer';
+    }, 1200);
+    return;
+  }
+
   const itemsPayload = lastRecommendedBuild.map(it => ({
     product_id: it.id,
     quantity: 1
@@ -215,10 +223,10 @@ async function orderCurrentBuild() {
       discount: 0.0
     });
 
-    showToast('Custom PC order created successfully! Redirecting to orders...', 'success');
-    setTimeout(() => {
-      window.location.href = 'sales.html';
-    }, 1200);
+    showToast('Custom PC order created successfully! Thank you.', 'success');
+    if (window.pcSession?.user?.role === 'admin') {
+      setTimeout(() => { window.location.href = 'sales.html'; }, 1200);
+    }
   } catch (e) {
     showToast('Failed to place build order: ' + e.message, 'error');
   }
@@ -340,18 +348,26 @@ async function orderCustomRig() {
     return;
   }
 
+  if (!window.pcSession?.authenticated) {
+    showToast('Authorization required. Please sign in to purchase.', 'error');
+    setTimeout(() => {
+      window.location.href = '/login.html?redirect=/recommendation.html&auth=customer';
+    }, 1200);
+    return;
+  }
+
   try {
-    await apiCall('/api/sales', 'POST', {
+    const res = await apiCall('/api/sales', 'POST', {
       customer_name: (window.pcSession?.user?.name) || 'Custom Rig Builder',
       items: items,
       tax_rate: 0.18,
       discount: 0.0
     });
 
-    showToast('Custom Rig order placed successfully! Redirecting...', 'success');
-    setTimeout(() => {
-      window.location.href = 'sales.html';
-    }, 1200);
+    showToast('Custom Rig order placed successfully! Thank you.', 'success');
+    if (window.pcSession?.user?.role === 'admin') {
+      setTimeout(() => { window.location.href = 'sales.html'; }, 1200);
+    }
   } catch (err) {
     showToast('Failed to order custom rig: ' + err.message, 'error');
   }
