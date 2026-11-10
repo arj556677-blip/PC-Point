@@ -42,7 +42,7 @@ def init_db():
             customer_id INTEGER,
             total REAL NOT NULL,
             date TEXT NOT NULL,
-            FOREIGN KEY (customer_id) REFERENCES customers(id)
+            FOREIGN KEY (customer_id) REFERENCES users(id)
         )
     ''')
 
