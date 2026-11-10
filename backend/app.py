@@ -74,6 +74,16 @@ sales_linked_list = SalesLinkedList()
 customer_queue = CustomerQueue()
 component_graph = ComponentGraph()
 
+# Seed 3 demo support tickets so the admin can see the queue in action
+_demo_tickets = [
+    {'name': 'Rahul Sharma',  'phone': '9812345678', 'issue': 'Laptop screen flickering after recent update'},
+    {'name': 'Priya Nair',    'phone': '9745612389', 'issue': 'RAM not detected — system shows only 8 GB of 16 GB'},
+    {'name': 'Anish Kumar',   'phone': '9654123789', 'issue': 'GPU fan making loud noise, need replacement check'},
+]
+for _t in _demo_tickets:
+    _t['timestamp'] = '09:00:00'
+    customer_queue.enqueue(_t)
+
 # Active Checkout Stock Allocations & Reservation Engine
 active_reservations = {}
 reservation_lock = Lock()

@@ -397,12 +397,25 @@ function updateCartBadge() {
   let badge = document.getElementById('cart-badge');
   let btn = document.getElementById('cart-btn');
   if (!btn) return;
-  if (badge) badge.textContent = total;
-  btn.style.display = total > 0 ? 'flex' : 'none';
+  if (badge) badge.textContent = total > 0 ? total : '';
+  // Always visible — guests see the cart icon too; login gate fires on click
+  btn.style.display = 'flex';
+  // Show a lock overlay on the badge when no items (guest state)
+  const isAuth = window.pcSession && window.pcSession.authenticated;
+  btn.style.opacity = (!isAuth && total === 0) ? '0.7' : '1';
 }
 
 // ─── Cart Drawer ───
-function openCartDrawer() {
+async function openCartDrawer() {
+  // If not authenticated, show a friendly login prompt inside the cart panel
+  const authUser = window.pcSession && window.pcSession.authenticated
+    ? window.pcSession
+    : await checkUserAuth();
+
+  if (!authUser || !authUser.authenticated) {
+    showCartLoginPrompt();
+    return;
+  }
   let drawer = document.getElementById('cart-drawer');
   if (!drawer) {
     drawer = buildCartDrawer();
@@ -417,6 +430,67 @@ function closeCartDrawer() {
   const drawer = document.getElementById('cart-drawer');
   if (drawer) drawer.classList.remove('open');
   document.body.style.overflow = '';
+}
+
+/**
+ * Shows a slide-in cart panel with a "login to view cart" message for guests.
+ */
+function showCartLoginPrompt() {
+  // Remove any existing instance
+  const existing = document.getElementById('cart-guest-panel');
+  if (existing) { existing.remove(); return; }
+
+  const panel = document.createElement('div');
+  panel.id = 'cart-guest-panel';
+  panel.style.cssText = `
+    position:fixed;top:0;right:0;height:100vh;width:100%;max-width:380px;
+    background:#fff;z-index:4000;box-shadow:-8px 0 40px rgba(0,0,0,0.2);
+    display:flex;flex-direction:column;animation:slideInRight 0.35s cubic-bezier(0.4,0,0.2,1);
+  `;
+
+  const backdrop = document.createElement('div');
+  backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:3999;';
+  backdrop.onclick = () => { panel.remove(); backdrop.remove(); document.body.style.overflow = ''; };
+  document.body.appendChild(backdrop);
+
+  panel.innerHTML = `
+    <style>
+      @keyframes slideInRight { from { transform:translateX(100%); } to { transform:translateX(0); } }
+    </style>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid #e2e8f0;background:#1a1a2e;">
+      <div style="display:flex;align-items:center;gap:0.6rem;">
+        <i class="fa-solid fa-cart-shopping" style="color:#e63946;font-size:1.1rem;"></i>
+        <span style="font-weight:700;font-size:1rem;color:#fff;">Your Cart</span>
+      </div>
+      <button onclick="document.getElementById('cart-guest-panel').remove();document.querySelector('[style*=z-index\\:3999]')?.remove();document.body.style.overflow='';"
+        style="background:rgba(255,255,255,0.1);border:none;color:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2.5rem 1.5rem;text-align:center;gap:1rem;">
+      <div style="width:80px;height:80px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 10px #fee2e2;margin-bottom:0.5rem;">
+        <i class="fa-solid fa-lock" style="font-size:2rem;color:#e63946;"></i>
+      </div>
+      <h3 style="font-size:1.2rem;font-weight:800;color:#0f172a;margin:0;">Sign In to View Your Cart</h3>
+      <p style="color:#64748b;font-size:0.9rem;line-height:1.6;margin:0;">
+        Your shopping cart is only accessible to signed-in customers.
+        Please log in to view items, update quantities, or place an order.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:0.6rem;width:100%;margin-top:0.75rem;">
+        <a href="/login.html?redirect=%2Fproducts.html%3FopenCart%3D1" class="btn btn-primary"
+          style="padding:0.85rem;font-size:0.95rem;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:0.5rem;border-radius:10px;">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
+        </a>
+        <a href="/login.html?tab=register&redirect=%2Fproducts.html%3FopenCart%3D1" class="btn"
+          style="padding:0.85rem;font-size:0.9rem;background:#f8fafc;border:1px solid #cbd5e1;color:#1e293b;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:0.5rem;border-radius:10px;font-weight:600;">
+          <i class="fa-solid fa-user-plus"></i> Create Account
+        </a>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(panel);
+  document.body.style.overflow = 'hidden';
 }
 
 function buildCartDrawer() {
