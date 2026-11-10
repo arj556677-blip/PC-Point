@@ -286,7 +286,14 @@ function changeDetailQty(delta) {
 }
 
 // ─── Cart Functions ───
-function addToCart(productId) {
+async function addToCart(productId) {
+  // Block unauthenticated users — must be signed in to add items
+  const authUser = await checkUserAuth();
+  if (!authUser || !authUser.authenticated) {
+    showAuthPromptModal();
+    return;
+  }
+
   const p = allProducts.find(x => x.id === productId);
   if (!p || p.stock === 0) { showToast('This item is out of stock', 'error'); return; }
   const existing = cart.find(c => c.id === productId);
@@ -302,7 +309,15 @@ function addToCart(productId) {
   showToast(`${p.name} added to cart!`, 'success');
 }
 
-function addToCartFromDetail(productId) {
+async function addToCartFromDetail(productId) {
+  // Block unauthenticated users
+  const authUser = await checkUserAuth();
+  if (!authUser || !authUser.authenticated) {
+    closeProductDetail();
+    showAuthPromptModal();
+    return;
+  }
+
   const p = allProducts.find(x => x.id === productId);
   if (!p || p.stock === 0) return;
   const qtyInput = document.getElementById('detail-qty');

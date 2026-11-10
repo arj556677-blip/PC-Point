@@ -289,17 +289,22 @@ function formatTimeSeconds(seconds) {
 
 /**
  * Update all navigation bars to reflect current auth state.
+ * Targets any element in .nav-actions that is a link to login or the user menu.
  */
 function updateNavForSession() {
   document.querySelectorAll('.nav-actions').forEach(actionsDiv => {
-    const signInLink = actionsDiv.querySelector('a[href="/login.html"], a[href="login.html"], a[href="/login"], .session-user-menu');
-    
+    // Match the auth button regardless of its current label/text
+    const authBtn = actionsDiv.querySelector(
+      'a[href="/login.html"], a[href="login.html"], a[href="/login"], ' +
+      '.session-user-menu, .nav-auth-btn'
+    );
+
     if (pcSession.authenticated && pcSession.user) {
       const user = pcSession.user;
       const isAdmin = user.role === 'admin';
       const icon = isAdmin ? 'fa-user-shield' : 'fa-user';
       const roleBadge = isAdmin ? 'Admin' : 'Customer';
-      
+
       const userMenuHtml = `
         <div class="session-user-menu" style="display:flex;align-items:center;gap:0.4rem;">
           <span class="session-user-badge" style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;font-weight:600;color:var(--text-2,#64748b);">
@@ -307,7 +312,7 @@ function updateNavForSession() {
             <span class="session-user-name" style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(user.name)}</span>
             <span style="font-size:0.7rem;padding:2px 6px;border-radius:4px;background:${isAdmin ? '#fee2e2' : '#dbeafe'};color:${isAdmin ? '#dc2626' : '#2563eb'};">${roleBadge}</span>
           </span>
-          <button onclick="lockScreenNow()" class="btn btn-ghost btn-sm" title="Lock Screen for Privacy" style="font-size:0.75rem;padding:0.3rem 0.55rem;color:#64748b;border-color:#e2e8f0;">
+          <button onclick="lockScreenNow()" class="btn btn-ghost btn-sm" title="Lock Screen" style="font-size:0.75rem;padding:0.3rem 0.55rem;color:#64748b;border-color:#e2e8f0;">
             <i class="fa-solid fa-lock"></i>
           </button>
           <button onclick="handleLogout()" class="btn btn-ghost btn-sm" style="font-size:0.75rem;padding:0.3rem 0.55rem;color:#dc2626;border-color:#fecaca;">
@@ -315,18 +320,24 @@ function updateNavForSession() {
           </button>
         </div>
       `;
-      
-      if (signInLink) {
-        signInLink.outerHTML = userMenuHtml;
+
+      if (authBtn) {
+        authBtn.outerHTML = userMenuHtml;
       }
     } else {
-      // Revert to clean guest Sign In button if unauthenticated
-      if (signInLink && signInLink.classList.contains('session-user-menu')) {
-        signInLink.outerHTML = `
-          <a href="/login.html" class="btn btn-primary btn-sm">
+      // Not authenticated — ensure Sign In button is shown
+      if (authBtn && authBtn.classList.contains('session-user-menu')) {
+        // Replace user menu back to Sign In
+        authBtn.outerHTML = `
+          <a href="/login.html" class="btn btn-primary btn-sm nav-auth-btn">
             <i class="fa-solid fa-user"></i> Sign In
           </a>
         `;
+      } else if (authBtn) {
+        // Fix any stale label (e.g., "Admin") — always show Sign In for guests
+        authBtn.className = 'btn btn-primary btn-sm nav-auth-btn';
+        authBtn.href = '/login.html';
+        authBtn.innerHTML = '<i class="fa-solid fa-user"></i> Sign In';
       }
     }
   });
