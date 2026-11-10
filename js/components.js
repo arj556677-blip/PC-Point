@@ -158,7 +158,9 @@ async function runHardwareCompatibilityScan() {
       setTimeout(() => {
         let edgeText = '<div style="margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dashed #cbd5e1;"><strong>Verified Hardware Interconnect Links:</strong><div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem;">';
         edges.forEach(e => {
-          edgeText += `<span style="background: #e2e8f0; padding: 2px 8px; border-radius: 4px; font-size: 0.82rem; color: #1e293b;">${e[0]} &rarr; ${e[1]}</span>`;
+          const fromNode = (e && typeof e === 'object' && e.from !== undefined) ? e.from : (Array.isArray(e) ? e[0] : e);
+          const toNode = (e && typeof e === 'object' && e.to !== undefined) ? e.to : (Array.isArray(e) ? e[1] : '');
+          edgeText += `<span style="background: #e2e8f0; padding: 2px 8px; border-radius: 4px; font-size: 0.82rem; color: #1e293b;">${escapeHtml(fromNode)} &rarr; ${escapeHtml(toNode)}</span>`;
         });
         edgeText += '</div></div>';
         if (traceDiv) traceDiv.innerHTML += edgeText;
